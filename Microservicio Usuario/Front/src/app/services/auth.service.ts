@@ -1,16 +1,7 @@
 import { Injectable, signal } from '@angular/core';
+import type { UserSession, UserRol } from '../models/auth.model';
 
-export interface UserSession {
-  usuario_id: string;
-  email: string;
-  nombre: string;
-  apellido: string;
-  rol: string;
-  cliente_id?: number | null;
-  numero_socio?: string | null;
-  objetivo_fitness?: string | null;
-  onboarding_completado?: boolean;
-}
+export type { UserSession, UserRol };
 
 @Injectable({
   providedIn: 'root'

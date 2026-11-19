@@ -1,0 +1,417 @@
+<div class="fade-in space-y-6">
+  
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-6">
+    <div>
+      <span class="text-xs text-orange-400 font-bold tracking-wider font-mono">CONTROL DEL MICROSERVICIO</span>
+      <h1 class="text-2xl font-bold text-white mt-1">Métricas, Personal y Auditoría</h1>
+      <p class="text-xs text-slate-400 mt-0.5">Demuestra el funcionamiento de microservicios y ejecuta simulaciones de carga en vivo.</p>
+    </div>
+    <button (click)="cargarPanelAdmin()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition">
+      <i class="fa-solid fa-rotate-right mr-1"></i> Recargar Métricas
+    </button>
+  </div>
+
+  <!-- Métricas Globales -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow">
+      <span class="text-xs text-slate-400">Total Usuarios</span>
+      <div class="text-3xl font-extrabold text-white mt-1">{{ metricasAdmin?.metricas_globales?.total_usuarios || 0 }}</div>
+      <span class="text-xs text-emerald-400">{{ metricasAdmin?.metricas_globales?.usuarios_activos || 0 }} activos</span>
+    </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow">
+      <span class="text-xs text-slate-400">Total Socios / Clientes</span>
+      <div class="text-3xl font-extrabold text-orange-400 mt-1">{{ metricasAdmin?.metricas_globales?.total_socios || 0 }}</div>
+      <span class="text-xs text-slate-400">Con expediente creado</span>
+    </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow">
+      <span class="text-xs text-slate-400">Mediciones Registradas</span>
+      <div class="text-3xl font-extrabold text-amber-400 mt-1">{{ metricasAdmin?.metricas_globales?.total_mediciones_registradas || 0 }}</div>
+      <span class="text-xs text-slate-400">En historial clínico</span>
+    </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow">
+      <span class="text-xs text-slate-400">Observaciones Técnicas</span>
+      <div class="text-3xl font-extrabold text-blue-400 mt-1">{{ metricasAdmin?.metricas_globales?.total_observaciones_realizadas || 0 }}</div>
+      <span class="text-xs text-slate-400">Notas de entrenadores</span>
+    </div>
+  </div>
+
+  <!-- LIVE CONCURRENCY TEST FOR PROFESSOR DEMO -->
+  <div class="bg-gradient-to-r from-slate-900 via-slate-850 to-orange-950/30 border border-orange-500/40 rounded-2xl p-6 shadow-xl space-y-4">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <span class="text-xs px-2.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-bold border border-orange-500/30 font-mono">DEMOSTRACIÓN DE ARQUITECTURA</span>
+        <h2 class="text-lg font-bold text-white mt-1">Prueba de Alta Demanda en Vivo (30 Clientes Simultáneos)</h2>
+        <p class="text-xs text-slate-400">Dispara peticiones paralelas con <code>Promise.all()</code> para demostrar que el microservicio maneja registros concurrentes sin caídas ni bloqueos de base de datos.</p>
+      </div>
+      <button (click)="simularConcurrencia()" [disabled]="ejecutandoConcurrencia"
+              class="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-xs transition shadow-lg shadow-orange-500/20 disabled:opacity-50 whitespace-nowrap">
+        <span *ngIf="ejecutandoConcurrencia"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Disparando 30 peticiones...</span>
+        <span *ngIf="!ejecutandoConcurrencia"><i class="fa-solid fa-bolt mr-1"></i> Ejecutar Prueba Concurrente</span>
+      </button>
+    </div>
+
+    <div *ngIf="resultadoConcurrencia" class="p-4 rounded-xl bg-slate-950 border border-emerald-500/30 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center fade-in">
+      <div>
+        <span class="text-xs text-slate-400 block">Total Peticiones:</span>
+        <span class="text-xl font-bold text-white font-mono">{{ resultadoConcurrencia.total }}</span>
+      </div>
+      <div>
+        <span class="text-xs text-slate-400 block">Exitosas (HTTP 201):</span>
+        <span class="text-xl font-bold text-emerald-400 font-mono">{{ resultadoConcurrencia.exitosos }} ✅</span>
+      </div>
+      <div>
+        <span class="text-xs text-slate-400 block">Tiempo Total:</span>
+        <span class="text-xl font-bold text-white font-mono">{{ resultadoConcurrencia.tiempoMs }} ms</span>
+      </div>
+      <div>
+        <span class="text-xs text-slate-400 block">Rendimiento:</span>
+        <span class="text-xl font-bold text-orange-400 font-mono">{{ resultadoConcurrencia.tps }} req/seg</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sub-navegación del Administrador -->
+  <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
+    <button (click)="subTabAdmin = 'staff'"
+            [class.bg-orange-500]="subTabAdmin === 'staff'"
+            [class.text-white]="subTabAdmin === 'staff'"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 bg-slate-900 border border-slate-800 hover:text-white transition flex items-center gap-2">
+      <i class="fa-solid fa-users-gear"></i> Personal del Sistema (Staff)
+    </button>
+    <button (click)="subTabAdmin = 'clientes'"
+            [class.bg-orange-500]="subTabAdmin === 'clientes'"
+            [class.text-white]="subTabAdmin === 'clientes'"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 bg-slate-900 border border-slate-800 hover:text-white transition flex items-center gap-2">
+      <i class="fa-solid fa-address-book"></i> Socios / Clientes (Datos Administrativos)
+    </button>
+    <button (click)="subTabAdmin = 'auditoria'"
+            [class.bg-orange-500]="subTabAdmin === 'auditoria'"
+            [class.text-white]="subTabAdmin === 'auditoria'"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 bg-slate-900 border border-slate-800 hover:text-white transition flex items-center gap-2">
+      <i class="fa-solid fa-clock-rotate-left"></i> Bitácora de Auditoría
+    </button>
+  </div>
+
+  <!-- VISTA 1: PERSONAL DEL SISTEMA (ADMINS Y ENTRENADORES) -->
+  <div *ngIf="subTabAdmin === 'staff'" class="space-y-6 fade-in">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Form Crear Staff -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-user-plus text-orange-500"></i> Registrar Nuevo Personal
+        </h3>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Rol</label>
+            <select [(ngModel)]="formStaff.rol" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+              <option value="ENTRENADOR">Entrenador del Gimnasio</option>
+              <option value="ADMIN">Administrador de Sistema</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Nombres</label>
+              <input type="text" [(ngModel)]="formStaff.nombre" placeholder="Nombre" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Apellidos</label>
+              <input type="text" [(ngModel)]="formStaff.apellido" placeholder="Apellido" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Email Institucional</label>
+            <input type="email" [(ngModel)]="formStaff.email" placeholder="staff@smartgym.pe" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+          <div *ngIf="formStaff.rol === 'ENTRENADOR'">
+            <label class="block text-xs text-slate-400 mb-1">Especialidad Deportiva</label>
+            <input type="text" [(ngModel)]="formStaff.especialidad" placeholder="Ej. Musculación y CrossFit" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Teléfono</label>
+            <input type="text" [(ngModel)]="formStaff.telefono" placeholder="961234567" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+        </div>
+
+        <button (click)="guardarStaff()" class="w-full py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-xs transition">
+          Crear Cuenta de Personal
+        </button>
+      </div>
+
+      <!-- Tabla de Staff -->
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-users text-orange-500"></i> Personal y Administradores Activos ({{ listaStaff.length }})
+        </h3>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="text-slate-400 border-b border-slate-800 uppercase font-mono text-[10px]">
+              <tr>
+                <th class="py-2.5 px-3">Nombre</th>
+                <th class="py-2.5 px-3">Email</th>
+                <th class="py-2.5 px-3">Rol</th>
+                <th class="py-2.5 px-3">Especialidad / Tel</th>
+                <th class="py-2.5 px-3">Estado</th>
+                <th class="py-2.5 px-3 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50">
+              <tr *ngFor="let s of listaStaff" class="hover:bg-slate-800/30">
+                <td class="py-2.5 px-3 font-bold text-white">{{ s.nombre }} {{ s.apellido }}</td>
+                <td class="py-2.5 px-3 font-mono text-slate-300">{{ s.email }}</td>
+                <td class="py-2.5 px-3">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono"
+                        [ngClass]="s.rol_nombre === 'ADMIN' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'">
+                    {{ s.rol_nombre }}
+                  </span>
+                </td>
+                <td class="py-2.5 px-3 text-slate-400">
+                  <div>{{ s.especialidad || 'Administración' }}</div>
+                  <div class="text-[10px] text-slate-500">{{ s.personal_telefono || '-' }}</div>
+                </td>
+                <td class="py-2.5 px-3">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-semibold"
+                        [ngClass]="s.activo ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'">
+                    {{ s.activo ? 'ACTIVO' : 'INACTIVO' }}
+                  </span>
+                </td>
+                <td class="py-2.5 px-3 text-right">
+                  <button (click)="abrirModalEditarStaff(s)" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-orange-500/20 text-slate-300 hover:text-orange-400 text-xs font-semibold transition border border-slate-700">
+                    <i class="fa-solid fa-pen-to-square mr-1"></i> Editar
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- VISTA 2: GESTIÓN ADMINISTRATIVA DE CLIENTES / SOCIOS -->
+  <div *ngIf="subTabAdmin === 'clientes'" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4 fade-in">
+    <div class="flex justify-between items-center">
+      <div>
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-address-book text-orange-500"></i> Directorio Administrativo de Clientes ({{ listaClientesAdmin.length }})
+        </h3>
+        <p class="text-xs text-slate-400 mt-0.5">El administrador gestiona la cuenta e identidad del usuario. El estado de la membresía se sincroniza automáticamente con el microservicio MS-Membresías.</p>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="text-slate-400 border-b border-slate-800 uppercase font-mono text-[10px]">
+          <tr>
+            <th class="py-2.5 px-3">N° Socio</th>
+            <th class="py-2.5 px-3">Nombres y Apellidos</th>
+            <th class="py-2.5 px-3">DNI</th>
+            <th class="py-2.5 px-3">Correo Electrónico</th>
+            <th class="py-2.5 px-3">Teléfono</th>
+            <th class="py-2.5 px-3">Estado Cuenta</th>
+            <th class="py-2.5 px-3">Membresía</th>
+            <th class="py-2.5 px-3">Registro</th>
+            <th class="py-2.5 px-3 text-right">Acción</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/50">
+          <tr *ngFor="let c of listaClientesAdmin" class="hover:bg-slate-800/30">
+            <td class="py-2.5 px-3 font-mono font-bold text-orange-400">{{ c.numero_socio || 'SIN-SOCIO' }}</td>
+            <td class="py-2.5 px-3 font-bold text-white">{{ c.nombre }} {{ c.apellido }}</td>
+            <td class="py-2.5 px-3 font-mono text-slate-300">{{ c.dni || '-' }}</td>
+            <td class="py-2.5 px-3 text-slate-300">{{ c.email }}</td>
+            <td class="py-2.5 px-3 text-slate-400">{{ c.cliente_telefono || '-' }}</td>
+            <td class="py-2.5 px-3">
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold"
+                    [ngClass]="c.activo ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'"
+                    [title]="c.activo ? 'Cuenta habilitada para iniciar sesión' : 'Cuenta suspendida'">
+                {{ c.activo ? 'ACTIVO' : 'SUSPENDIDO' }}
+              </span>
+            </td>
+            <td class="py-2.5 px-3">
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase"
+                    [ngClass]="c.estado_membresia === 'ACTIVA' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : (c.estado_membresia === 'PENDIENTE' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20')"
+                    [title]="'Sincronizado vía API con MS-Membresías'">
+                {{ c.estado_membresia || 'PENDIENTE' }}
+              </span>
+            </td>
+            <td class="py-2.5 px-3 text-slate-500 text-[11px]">{{ c.created_at | date:'dd/MM/yyyy' }}</td>
+            <td class="py-2.5 px-3 text-right">
+              <button (click)="abrirModalEditarCliente(c)" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-orange-500/20 text-slate-300 hover:text-orange-400 text-xs font-semibold transition border border-slate-700">
+                <i class="fa-solid fa-pen-to-square mr-1"></i> Modificar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- VISTA 3: AUDITORÍA -->
+  <div *ngIf="subTabAdmin === 'auditoria'" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4 fade-in">
+    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+      <i class="fa-solid fa-clock-rotate-left text-orange-500"></i> Bitácora de Trazabilidad y Auditoría
+    </h3>
+    <div class="overflow-x-auto max-h-[450px]">
+      <table class="w-full text-left text-xs">
+        <thead class="text-slate-400 border-b border-slate-800 uppercase font-mono text-[10px]">
+          <tr>
+            <th class="py-2.5 px-3">Acción</th>
+            <th class="py-2.5 px-3">Entidad</th>
+            <th class="py-2.5 px-3">Dirección IP</th>
+            <th class="py-2.5 px-3">Fecha y Hora</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/50">
+          <tr *ngFor="let a of auditoriaList" class="hover:bg-slate-800/20">
+            <td class="py-2.5 px-3 font-mono font-bold text-orange-400">{{ a.accion }}</td>
+            <td class="py-2.5 px-3 text-slate-300">{{ a.tabla_afectada || 'Sistema' }}</td>
+            <td class="py-2.5 px-3 font-mono text-slate-400">{{ a.ip_origen || '-' }}</td>
+            <td class="py-2.5 px-3 text-slate-500">{{ a.fecha | date:'HH:mm:ss dd/MM/yyyy' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL 2: EDITAR PERSONAL / STAFF (ADMIN) -->
+<div *ngIf="modalEditarStaff" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm fade-in">
+  <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+      <h3 class="text-base font-bold text-white flex items-center gap-2">
+        <i class="fa-solid fa-user-gear text-orange-500"></i> Modificar Personal del Sistema
+      </h3>
+      <button (click)="modalEditarStaff = false" class="text-slate-400 hover:text-white text-lg">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="space-y-3 text-xs" *ngIf="staffSeleccionado">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-slate-400 mb-1">Nombres</label>
+          <input type="text" [(ngModel)]="staffSeleccionado.nombre" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Apellidos</label>
+          <input type="text" [(ngModel)]="staffSeleccionado.apellido" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+        </div>
+      </div>
+      <div>
+        <label class="block text-slate-400 mb-1">Correo Electrónico</label>
+        <input type="email" [(ngModel)]="staffSeleccionado.email" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-slate-400 mb-1">Especialidad / Cargo</label>
+          <input type="text" [(ngModel)]="staffSeleccionado.especialidad" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Teléfono</label>
+          <input type="text" [(ngModel)]="staffSeleccionado.telefono" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+        </div>
+      </div>
+      <div>
+        <label class="block text-slate-400 mb-1">Estado de Cuenta</label>
+        <select [(ngModel)]="staffSeleccionado.activo" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          <option [ngValue]="true">Activo (Habilitado para trabajar)</option>
+          <option [ngValue]="false">Inactivo (Suspendido temporalmente)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+      <button (click)="modalEditarStaff = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">
+        Cancelar
+      </button>
+      <button (click)="guardarEdicionStaff()" class="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold">
+        Actualizar Personal
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 3: EDITAR SOCIO / CLIENTE (ADMINISTRATIVO) -->
+<div *ngIf="modalEditarCliente" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm fade-in">
+  <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+      <div>
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-address-card text-orange-500"></i> Modificar Datos de Socio (Administrativo)
+        </h3>
+        <span class="text-xs font-mono text-orange-400">{{ clienteAdminSeleccionado?.numero_socio }}</span>
+      </div>
+      <button (click)="modalEditarCliente = false" class="text-slate-400 hover:text-white text-lg">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="space-y-3 text-xs" *ngIf="clienteAdminSeleccionado">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-slate-400 mb-1">Nombres</label>
+          <input type="text" [(ngModel)]="clienteAdminSeleccionado.nombre" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Apellidos</label>
+          <input type="text" [(ngModel)]="clienteAdminSeleccionado.apellido" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-slate-400 mb-1">DNI</label>
+          <input type="text" [(ngModel)]="clienteAdminSeleccionado.dni" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Teléfono</label>
+          <input type="text" [(ngModel)]="clienteAdminSeleccionado.telefono" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+        </div>
+      </div>
+      <div>
+        <label class="block text-slate-400 mb-1">Correo Electrónico</label>
+        <input type="email" [(ngModel)]="clienteAdminSeleccionado.email" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-slate-400 mb-1">Estado de Cuenta (Login)</label>
+          <select [(ngModel)]="clienteAdminSeleccionado.activo" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+            <option [ngValue]="true">Activo (Acceso Web Habilitado)</option>
+            <option [ngValue]="false">Suspendido (Bloqueo de Cuenta)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Estado de Membresía (Plan)</label>
+          <select [(ngModel)]="clienteAdminSeleccionado.estado_membresia" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+            <option value="ACTIVA">ACTIVA (Plan vigente)</option>
+            <option value="PENDIENTE">PENDIENTE (Sin pago / nuevo)</option>
+            <option value="VENCIDA">VENCIDA (Plan expirado)</option>
+            <option value="CONGELADA">CONGELADA (Permiso temporal)</option>
+          </select>
+        </div>
+      </div>
+
+      <p class="text-[11px] text-slate-400 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+        <i class="fa-solid fa-circle-info text-orange-400 mr-1"></i>
+        <strong>Separación de Dominios:</strong> El <em>Estado de Cuenta</em> controla el acceso a la plataforma de usuarios. El <em>Estado de Membresía</em> es actualizado automáticamente por el microservicio <strong>MS-Membresías</strong> vía API interna.
+      </p>
+
+      <p class="text-[11px] text-slate-500 italic">
+        * Como administrador no puedes alterar registros de pesajes ni notas médicas, garantizando la privacidad del socio.
+      </p>
+    </div>
+
+    <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+      <button (click)="modalEditarCliente = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">
+        Cancelar
+      </button>
+      <button (click)="guardarEdicionClienteAdmin()" class="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold">
+        Guardar Cambios
+      </button>
+    </div>
+  </div>
+</div>

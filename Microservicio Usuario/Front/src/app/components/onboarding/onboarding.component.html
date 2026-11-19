@@ -1,0 +1,289 @@
+<div class="fade-in space-y-6">
+  
+  <!-- Wizard Banner -->
+  <div class="rounded-2xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 p-6 sm:p-8 shadow-xl text-white relative overflow-hidden">
+    <div class="relative z-10 max-w-2xl">
+      <span class="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold uppercase tracking-wider backdrop-blur">
+        Auto-Servicio Digital 100% Web
+      </span>
+      <h1 class="text-3xl sm:text-4xl font-extrabold font-display mt-3">Inscríbete y perfila tu condición física sin filas</h1>
+      <p class="mt-2 text-orange-100 text-sm sm:text-base leading-relaxed">
+        Elimina la espera en recepción. Registra tus biometría, cuestionario de salud PAR-Q y preferencias de entrenamiento para obtener tu carnet virtual de inmediato.
+      </p>
+    </div>
+  </div>
+
+  <!-- Steps Indicator -->
+  <div class="grid grid-cols-4 gap-2 sm:gap-4">
+    <div [class.border-orange-500]="pasoOnboarding >= 1" class="border-t-4 pt-2 transition">
+      <span class="text-xs text-orange-400 font-bold">PASO 1</span>
+      <p class="text-sm font-semibold truncate text-slate-200">Datos y Biometría</p>
+    </div>
+    <div [class.border-orange-500]="pasoOnboarding >= 2" class="border-t-4 pt-2 border-slate-800 transition">
+      <span class="text-xs text-slate-400 font-bold">PASO 2</span>
+      <p class="text-sm font-semibold truncate text-slate-200">Ficha Médica PAR-Q</p>
+    </div>
+    <div [class.border-orange-500]="pasoOnboarding >= 3" class="border-t-4 pt-2 border-slate-800 transition">
+      <span class="text-xs text-slate-400 font-bold">PASO 3</span>
+      <p class="text-sm font-semibold truncate text-slate-200">Preferencias</p>
+    </div>
+    <div [class.border-orange-500]="pasoOnboarding >= 4" class="border-t-4 pt-2 border-slate-800 transition">
+      <span class="text-xs text-slate-400 font-bold">PASO 4</span>
+      <p class="text-sm font-semibold truncate text-slate-200">Pase Digital QR</p>
+    </div>
+  </div>
+
+  <!-- PASO 1: Biometría & Cálculos Científicos -->
+  <div *ngIf="pasoOnboarding === 1" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+      <h2 class="text-lg font-bold text-white flex items-center gap-2">
+        <i class="fa-solid fa-weight-scale text-orange-500"></i> Evaluación Biometrica Inicial
+      </h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">DNI (8 dígitos)</label>
+          <input type="text" [(ngModel)]="formBio.dni" maxlength="8" placeholder="72345678"
+                 class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-orange-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Fecha de Nacimiento</label>
+          <input type="date" [(ngModel)]="formBio.fecha_nacimiento"
+                 class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-orange-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Sexo Biológico</label>
+          <select [(ngModel)]="formBio.sexo" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-orange-500 focus:outline-none">
+            <option value="M">Masculino</option>
+            <option value="F">Femenino</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Teléfono Móvil</label>
+          <input type="text" [(ngModel)]="formBio.telefono" placeholder="961234567"
+                 class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-orange-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Peso Actual (kg): <span class="text-orange-400 font-bold">{{ formBio.peso }} kg</span></label>
+          <input type="range" [(ngModel)]="formBio.peso" min="40" max="150" step="0.5" class="w-full accent-orange-500">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Talla (cm): <span class="text-orange-400 font-bold">{{ formBio.talla }} cm</span></label>
+          <input type="range" [(ngModel)]="formBio.talla" min="130" max="210" step="1" class="w-full accent-orange-500">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Objetivo Fitness Principal</label>
+          <select [(ngModel)]="formBio.objetivo_fitness" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-orange-500 focus:outline-none">
+            <option value="PERDER_PESO">Perder Peso & Grasa</option>
+            <option value="GANAR_MUSCULO">Hipertrofia & Ganancia Muscular</option>
+            <option value="GANAR_FUERZA">Fuerza & Powerlifting</option>
+            <option value="RESISTENCIA">Resistencia Cardiovascular</option>
+            <option value="SALUD_GENERAL">Salud General & Postura</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Factor de Actividad Habitual</label>
+          <select [(ngModel)]="formBio.factor_actividad" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-orange-500 focus:outline-none">
+            <option value="SEDENTARIO">Sedentario (Oficina / Poco ejercicio)</option>
+            <option value="LIGERO">Ligero (1-3 días de actividad)</option>
+            <option value="MODERADO">Moderado (3-5 días de ejercicio)</option>
+            <option value="ACTIVO">Activo (6-7 días de entrenamiento)</option>
+            <option value="MUY_ACTIVO">Muy Activo (Atleta / Trabajo pesado)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="pt-4 flex justify-end">
+        <button (click)="avanzarPaso1()" [disabled]="cargandoOnboarding"
+                class="px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold transition flex items-center gap-2 shadow-lg shadow-orange-500/20 disabled:opacity-50">
+          <span *ngIf="cargandoOnboarding"><i class="fa-solid fa-spinner fa-spin"></i> Guardando...</span>
+          <span *ngIf="!cargandoOnboarding">Continuar a Ficha Médica <i class="fa-solid fa-arrow-right"></i></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Preview -->
+    <div class="bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+      <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+        <i class="fa-solid fa-calculator text-orange-400"></i> Métricas en Tiempo Real
+      </h3>
+
+      <div class="p-4 rounded-xl bg-slate-950 border border-slate-800">
+        <div class="flex justify-between items-center">
+          <span class="text-xs text-slate-400">Índice de Masa Corporal (IMC)</span>
+          <span class="text-xs px-2 py-0.5 rounded-full font-semibold"
+                [ngClass]="imcCalculado < 25 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'">
+            {{ clasificacionIMCCalculada }}
+          </span>
+        </div>
+        <div class="text-3xl font-extrabold font-display text-white mt-1">{{ imcCalculado }} <span class="text-xs text-slate-500 font-normal">kg/m²</span></div>
+      </div>
+
+      <div class="p-4 rounded-xl bg-slate-950 border border-slate-800">
+        <span class="text-xs text-slate-400">Tasa Metabólica Basal (Harris-Benedict)</span>
+        <div class="text-2xl font-extrabold font-display text-orange-400 mt-1">{{ tmbEstimado }} <span class="text-xs text-slate-500 font-normal">kcal/día</span></div>
+        <p class="text-xs text-slate-500 mt-1">Calorías consumidas en reposo absoluto para funciones vitales.</p>
+      </div>
+
+      <div class="p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 text-xs text-orange-200">
+        <i class="fa-solid fa-bolt text-orange-400 mr-1"></i>
+        <strong>Diseñado para Alta Concurrencia:</strong> Cientos de clientes pueden completar esta evaluación en paralelo sin bloquear la base de datos central.
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 2: Ficha Médica Deportiva & PAR-Q -->
+  <div *ngIf="pasoOnboarding === 2" class="max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+    <div class="border-b border-slate-800 pb-4">
+      <span class="text-xs px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 font-semibold border border-red-500/20">Cuestionario Médico Oficial</span>
+      <h2 class="text-xl font-bold text-white mt-2">Cuestionario PAR-Q de Aptitud para Actividad Física</h2>
+      <p class="text-sm text-slate-400 mt-1">Por tu seguridad, responde con total sinceridad. Esto permitirá a los entrenadores protegerte de lesiones.</p>
+    </div>
+
+    <div class="space-y-3">
+      <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+        <input type="checkbox" [(ngModel)]="formPARQ.p1" class="mt-1 accent-orange-500 w-4 h-4">
+        <span class="text-sm text-slate-300">1. ¿Alguna vez un médico le ha dicho que tiene un problema cardíaco y que solo debería realizar actividad física bajo prescripción médica?</span>
+      </label>
+      <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+        <input type="checkbox" [(ngModel)]="formPARQ.p2" class="mt-1 accent-orange-500 w-4 h-4">
+        <span class="text-sm text-slate-300">2. ¿Siente dolor en el pecho cuando realiza actividad física o ejercicio?</span>
+      </label>
+      <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+        <input type="checkbox" [(ngModel)]="formPARQ.p3" class="mt-1 accent-orange-500 w-4 h-4">
+        <span class="text-sm text-slate-300">3. ¿Ha tenido dolor en el pecho durante el último mes estando en reposo?</span>
+      </label>
+      <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+        <input type="checkbox" [(ngModel)]="formPARQ.p4" class="mt-1 accent-orange-500 w-4 h-4">
+        <span class="text-sm text-slate-300">4. ¿Pierde el equilibrio a causa de mareos o ha perdido alguna vez el conocimiento?</span>
+      </label>
+      <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+        <input type="checkbox" [(ngModel)]="formPARQ.p5" class="mt-1 accent-orange-500 w-4 h-4">
+        <span class="text-sm text-slate-300">5. ¿Tiene algún problema óseo o articular (ej. espalda, rodilla) que podría empeorar al hacer ejercicio?</span>
+      </label>
+      <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+        <input type="checkbox" [(ngModel)]="formPARQ.p6" class="mt-1 accent-orange-500 w-4 h-4">
+        <span class="text-sm text-slate-300">6. ¿Le receta su médico medicamentos para la presión arterial o condición cardíaca?</span>
+      </label>
+      <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+        <input type="checkbox" [(ngModel)]="formPARQ.p7" class="mt-1 accent-orange-500 w-4 h-4">
+        <span class="text-sm text-slate-300">7. ¿Existe alguna otra razón por la que no debería realizar actividad física?</span>
+      </label>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Tipo de Sangre</label>
+        <select [(ngModel)]="formPARQ.tipo_sangre" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          <option value="O+">O Positivo (O+)</option>
+          <option value="O-">O Negativo (O-)</option>
+          <option value="A+">A Positivo (A+)</option>
+          <option value="A-">A Negativo (A-)</option>
+          <option value="B+">B Positivo (B+)</option>
+          <option value="B-">B Negativo (B-)</option>
+          <option value="AB+">AB Positivo (AB+)</option>
+          <option value="AB-">AB Negativo (AB-)</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Lesiones o cirugías previas</label>
+        <input type="text" [(ngModel)]="formPARQ.lesiones_previas" placeholder="Ej. Esguince rodilla derecha (2024)"
+               class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+      </div>
+    </div>
+
+    <div class="flex justify-between items-center pt-4">
+      <button (click)="pasoOnboarding = 1" class="text-sm text-slate-400 hover:text-white">← Regresar a biometría</button>
+      <button (click)="avanzarPaso2()" [disabled]="cargandoOnboarding"
+              class="px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold transition">
+        Continuar a Preferencias →
+      </button>
+    </div>
+  </div>
+
+  <!-- PASO 3: Preferencias Deportivas -->
+  <div *ngIf="pasoOnboarding === 3" class="max-w-2xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+    <div>
+      <h2 class="text-xl font-bold text-white">Preferencias de Entrenamiento y Disponibilidad</h2>
+      <p class="text-sm text-slate-400 mt-1">Configura tus disciplinas favoritas para optimizar las recomendaciones de tu membresía.</p>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Horario Preferido de Asistencia</label>
+        <select [(ngModel)]="formPref.horario_preferido" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          <option value="MANANA">Mañanas (6:00 AM - 11:00 AM)</option>
+          <option value="TARDE">Tardes (2:00 PM - 6:00 PM)</option>
+          <option value="NOCHE">Noches (6:00 PM - 10:30 PM)</option>
+          <option value="FLEXIBLE">Flexible / Rotativo</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Frecuencia Semanal Estimada: {{ formPref.frecuencia_semanal }} días/semana</label>
+        <input type="range" [(ngModel)]="formPref.frecuencia_semanal" min="1" max="7" class="w-full accent-orange-500">
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Experiencia deportiva previa</label>
+        <textarea [(ngModel)]="formPref.experiencia_previa" rows="3" placeholder="Ej. Entrené 6 meses en casa, hacía calistenia..."
+                  class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white"></textarea>
+      </div>
+    </div>
+
+    <div class="flex justify-between items-center pt-4">
+      <button (click)="pasoOnboarding = 2" class="text-sm text-slate-400 hover:text-white">← Regresar a ficha médica</button>
+      <button (click)="finalizarOnboarding()" [disabled]="cargandoOnboarding"
+              class="px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold transition">
+        Finalizar y Emitir Carnet Digital 🎉
+      </button>
+    </div>
+  </div>
+
+  <!-- PASO 4: Resumen & Carnet Digital Emitido -->
+  <div *ngIf="pasoOnboarding === 4" class="max-w-md mx-auto text-center space-y-6 fade-in">
+    <div class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-3xl">
+      <i class="fa-solid fa-circle-check"></i>
+    </div>
+    <div>
+      <h2 class="text-2xl font-bold text-white">¡Onboarding Digital Completado!</h2>
+      <p class="text-sm text-slate-400 mt-1">Tu perfil ha sido registrado y tus datos están listos para ser consumidos por el sistema de membresías y torniquetes.</p>
+    </div>
+
+    <!-- Pase Digital -->
+    <div class="bg-gradient-to-br from-slate-900 via-slate-850 to-orange-950/40 border border-orange-500/30 rounded-2xl p-6 shadow-2xl text-left relative overflow-hidden">
+      <div class="flex justify-between items-start">
+        <div>
+          <span class="text-xs font-mono font-bold text-orange-400 tracking-wider">SMARTGYM PASS</span>
+          <h3 class="text-lg font-bold text-white mt-1">{{ auth.usuario()?.nombre }} {{ auth.usuario()?.apellido }}</h3>
+          <p class="text-xs text-slate-400 font-mono">{{ auth.usuario()?.numero_socio || 'SMART-2026-NUEVO' }}</p>
+        </div>
+        <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30">ACTIVO</span>
+      </div>
+
+      <!-- Simulated QR Code -->
+      <div class="my-6 bg-white p-4 rounded-xl max-w-[160px] mx-auto text-center shadow">
+        <div class="w-32 h-32 mx-auto bg-slate-900 flex items-center justify-center text-white text-xs font-mono p-2 text-center rounded">
+          <i class="fa-solid fa-qrcode text-6xl text-slate-200"></i>
+        </div>
+        <span class="text-[10px] text-slate-800 font-mono mt-1 block font-bold">ACCESO DIGITAL</span>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 text-xs border-t border-slate-800 pt-3">
+        <div>
+          <span class="text-slate-500 block">Objetivo:</span>
+          <span class="font-semibold text-slate-200">{{ formBio.objetivo_fitness }}</span>
+        </div>
+        <div>
+          <span class="text-slate-500 block">Sede Central:</span>
+          <span class="font-semibold text-slate-200">Pucallpa, Ucayali</span>
+        </div>
+      </div>
+    </div>
+
+    <button (click)="irAPortalSocio()" class="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold transition shadow-lg shadow-orange-500/20">
+      Ir a mi Portal de Socio →
+    </button>
+  </div>
+
+</div>

@@ -1,0 +1,83 @@
+<div class="fade-in max-w-md mx-auto my-8">
+  <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
+    
+    <!-- Toggle Modo -->
+    <div class="grid grid-cols-2 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+      <button (click)="modoAuth = 'login'" [class.bg-orange-500]="modoAuth === 'login'" [class.text-white]="modoAuth === 'login'"
+              class="py-2 rounded-lg text-xs font-semibold text-slate-400 transition">
+        Iniciar Sesión
+      </button>
+      <button (click)="modoAuth = 'register'" [class.bg-orange-500]="modoAuth === 'register'" [class.text-white]="modoAuth === 'register'"
+              class="py-2 rounded-lg text-xs font-semibold text-slate-400 transition">
+        Crear Cuenta
+      </button>
+    </div>
+
+    <div *ngIf="mensajeAuth" class="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-300">
+      {{ mensajeAuth }}
+    </div>
+
+    <!-- FORM LOGIN -->
+    <div *ngIf="modoAuth === 'login'" class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Correo Electrónico</label>
+        <input type="email" [(ngModel)]="formLogin.email" placeholder="cliente@smartgym.pe"
+               class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:border-orange-500 focus:outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Contraseña</label>
+        <input type="password" [(ngModel)]="formLogin.password" placeholder="••••••••"
+               class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:border-orange-500 focus:outline-none">
+      </div>
+      <button (click)="ejecutarLogin()" [disabled]="cargandoAuth"
+              class="w-full py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm transition shadow-lg shadow-orange-500/20 disabled:opacity-50">
+        <span *ngIf="cargandoAuth"><i class="fa-solid fa-spinner fa-spin"></i> Entrando...</span>
+        <span *ngIf="!cargandoAuth">Ingresar a SmartGym</span>
+      </button>
+
+      <!-- Acceso Rápido para Pruebas / Demo Docente -->
+      <div class="pt-4 border-t border-slate-800">
+        <span class="text-[11px] text-slate-500 font-bold block mb-2 uppercase">Acceso Rápido de Prueba (Demo):</span>
+        <div class="grid grid-cols-3 gap-2">
+          <button (click)="loginRapido('cliente1@smartgym.pe', 'Cliente123!')" class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-slate-300 hover:border-orange-500 transition">
+            Socio (Ana)
+          </button>
+          <button (click)="loginRapido('entrenador1@smartgym.pe', 'Trainer123!')" class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-slate-300 hover:border-orange-500 transition">
+            Entrenador
+          </button>
+          <button (click)="loginRapido('admin@smartgym.pe', 'Admin123!')" class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-slate-300 hover:border-orange-500 transition">
+            Admin
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORM REGISTRO -->
+    <div *ngIf="modoAuth === 'register'" class="space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Nombre</label>
+          <input type="text" [(ngModel)]="formRegister.nombre" placeholder="Juan" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:border-orange-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Apellido</label>
+          <input type="text" [(ngModel)]="formRegister.apellido" placeholder="Pérez" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:border-orange-500 focus:outline-none">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Correo Electrónico</label>
+        <input type="email" [(ngModel)]="formRegister.email" placeholder="usuario@correo.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:border-orange-500 focus:outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Contraseña (Mín. 8 caracteres)</label>
+        <input type="password" [(ngModel)]="formRegister.password" placeholder="Password123!" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:border-orange-500 focus:outline-none">
+      </div>
+      <button (click)="ejecutarRegistro()" [disabled]="cargandoAuth"
+              class="w-full py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm transition shadow-lg shadow-orange-500/20 disabled:opacity-50">
+        <span *ngIf="cargandoAuth"><i class="fa-solid fa-spinner fa-spin"></i> Registrando...</span>
+        <span *ngIf="!cargandoAuth">Crear Cuenta y Comenzar Onboarding</span>
+      </button>
+    </div>
+
+  </div>
+</div>
