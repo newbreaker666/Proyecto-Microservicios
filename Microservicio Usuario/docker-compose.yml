@@ -1,0 +1,55 @@
+services:
+  # ========================================================
+  # Microservicio de Usuarios e Identidad (Backend Node.js)
+  # ========================================================
+  backend:
+    build:
+      context: ./Back
+      dockerfile: Dockerfile
+    container_name: smartgym_ms_usuarios_backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DB_SERVER=host.docker.internal
+      - DB_PORT=1433
+      - DB_NAME=BBDD_SmartGym_Usuarios
+      - DB_USER=sa
+      - DB_PASSWORD=1234567
+      - JWT_SECRET=smartgym_jwt_secret_key_2026_ultra_secure
+      - JWT_EXPIRES_IN=24h
+      - REFRESH_TOKEN_EXPIRES_DAYS=7
+      - API_KEY_INTERSERVICIO=smartgym_api_key_2026_interservice
+      - CORS_ORIGIN=http://localhost:4200
+      - NODE_ENV=production
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.35'
+          memory: 300M
+
+  # ========================================================
+  # Portal Web de Usuarios (Frontend Angular 19 + Nginx)
+  # ========================================================
+  frontend:
+    build:
+      context: ./Front
+      dockerfile: Dockerfile
+    container_name: smartgym_ms_usuarios_frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.20'
+          memory: 150M
+
+networks:
+  default:
+    name: smartgym_network
