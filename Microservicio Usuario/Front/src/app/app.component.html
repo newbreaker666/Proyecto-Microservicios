@@ -1,0 +1,1688 @@
+<!-- ============================================================ -->
+<!-- SMARTGYM: MS-USUARIOS & DIGITAL ONBOARDING INTERFACE         -->
+<!-- ============================================================ -->
+
+<div class="min-h-screen flex flex-col bg-slate-950 text-slate-100 font-sans">
+
+  <!-- TOPBAR HEADER -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Logo y Badges -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
+          <i class="fa-solid fa-dumbbell text-xl text-white"></i>
+        </div>
+        <div>
+          <span class="font-display font-extrabold text-xl tracking-tight text-white">SMART<span class="text-orange-500">GYM</span></span>
+          <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono border border-slate-700">MS-Usuarios v2.0</span>
+        </div>
+
+        <!-- Health Badge -->
+        <div class="hidden md:flex items-center gap-1.5 ml-4 px-2.5 py-1 rounded-full text-xs font-medium border"
+             [ngClass]="msStatus === 'UP' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'">
+          <span class="w-2 h-2 rounded-full animate-pulse" [ngClass]="msStatus === 'UP' ? 'bg-emerald-400' : 'bg-red-400'"></span>
+          <span>{{ msStatus === 'UP' ? 'Microservicio Activo :3001' : 'Servicio Desconectado' }}</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs (Filtrados estrictamente por Rol RBAC) -->
+      <nav class="hidden lg:flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+        <!-- Visible para Invitados (sin cuenta) -->
+        <button *ngIf="!auth.usuario()"
+                (click)="cambiarTab('onboarding')"
+                [class.bg-orange-500]="tabActiva === 'onboarding'"
+                [class.text-white]="tabActiva === 'onboarding'"
+                class="px-3 py-1.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white flex items-center gap-2">
+          <i class="fa-solid fa-wand-magic-sparkles text-xs"></i> Auto-Registro Digital
+        </button>
+
+        <!-- Visible solo si es CLIENTE y aún no completó su perfil -->
+        <button *ngIf="auth.usuario()?.rol === 'CLIENTE' && !auth.usuario()?.onboarding_completado"
+                (click)="cambiarTab('onboarding')"
+                [class.bg-orange-500]="tabActiva === 'onboarding'"
+                [class.text-white]="tabActiva === 'onboarding'"
+                class="px-3 py-1.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white flex items-center gap-2">
+          <i class="fa-solid fa-wand-magic-sparkles text-xs"></i> Completar Onboarding
+        </button>
+
+        <!-- Visible ÚNICAMENTE para CLIENTE -->
+        <button *ngIf="auth.usuario()?.rol === 'CLIENTE'"
+                (click)="cambiarTab('socio')"
+                [class.bg-orange-500]="tabActiva === 'socio'"
+                [class.text-white]="tabActiva === 'socio'"
+                class="px-3 py-1.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white flex items-center gap-2">
+          <i class="fa-solid fa-id-card text-xs"></i> Mi Portal Socio
+        </button>
+
+        <!-- Visible ÚNICAMENTE para ENTRENADOR -->
+        <button *ngIf="auth.usuario()?.rol === 'ENTRENADOR'"
+                (click)="cambiarTab('entrenador')"
+                [class.bg-orange-500]="tabActiva === 'entrenador'"
+                [class.text-white]="tabActiva === 'entrenador'"
+                class="px-3 py-1.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white flex items-center gap-2">
+          <i class="fa-solid fa-clipboard-user text-xs"></i> Panel Entrenador
+        </button>
+
+        <!-- Visible ÚNICAMENTE para ADMIN -->
+        <button *ngIf="auth.usuario()?.rol === 'ADMIN'"
+                (click)="cambiarTab('admin')"
+                [class.bg-orange-500]="tabActiva === 'admin'"
+                [class.text-white]="tabActiva === 'admin'"
+                class="px-3 py-1.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white flex items-center gap-2">
+          <i class="fa-solid fa-chart-pie text-xs"></i> Administración
+        </button>
+      </nav>
+
+      <!-- User Session Actions -->
+      <div class="flex items-center gap-3">
+        <div *ngIf="auth.usuario() as u" class="flex items-center gap-2">
+          <div class="text-right hidden sm:block">
+            <div class="text-sm font-semibold text-white leading-tight">{{ u.nombre }} {{ u.apellido }}</div>
+            <div class="text-xs text-orange-400 font-mono font-medium">{{ u.rol }}</div>
+          </div>
+          <button (click)="cerrarSesion()" class="p-2 rounded-lg bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition" title="Cerrar sesión">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+
+        <button *ngIf="!auth.usuario()" (click)="cambiarTab('auth')"
+                class="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold shadow-lg shadow-orange-500/20 transition flex items-center gap-2">
+          <i class="fa-solid fa-user"></i> Iniciar Sesión
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MOBILE TAB BAR (Filtrado estricto por Rol) -->
+  <div class="lg:hidden flex overflow-x-auto border-b border-slate-800 bg-slate-900 px-2 py-2 gap-2 text-xs">
+    <button *ngIf="!auth.usuario()"
+            (click)="cambiarTab('onboarding')" [class.bg-orange-500]="tabActiva === 'onboarding'"
+            class="px-3 py-1.5 rounded-lg whitespace-nowrap bg-slate-800 text-slate-300">
+      Registro Digital
+    </button>
+    <button *ngIf="auth.usuario()?.rol === 'CLIENTE' && !auth.usuario()?.onboarding_completado"
+            (click)="cambiarTab('onboarding')" [class.bg-orange-500]="tabActiva === 'onboarding'"
+            class="px-3 py-1.5 rounded-lg whitespace-nowrap bg-slate-800 text-slate-300">
+      Completar Onboarding
+    </button>
+    <button *ngIf="auth.usuario()?.rol === 'CLIENTE'"
+            (click)="cambiarTab('socio')" [class.bg-orange-500]="tabActiva === 'socio'"
+            class="px-3 py-1.5 rounded-lg whitespace-nowrap bg-slate-800 text-slate-300">
+      Mi Portal Socio
+    </button>
+    <button *ngIf="auth.usuario()?.rol === 'ENTRENADOR'"
+            (click)="cambiarTab('entrenador')" [class.bg-orange-500]="tabActiva === 'entrenador'"
+            class="px-3 py-1.5 rounded-lg whitespace-nowrap bg-slate-800 text-slate-300">
+      Panel Entrenador
+    </button>
+    <button *ngIf="auth.usuario()?.rol === 'ADMIN'"
+            (click)="cambiarTab('admin')" [class.bg-orange-500]="tabActiva === 'admin'"
+            class="px-3 py-1.5 rounded-lg whitespace-nowrap bg-slate-800 text-slate-300">
+      Administración
+    </button>
+  </div>
+
+  <!-- MAIN BODY -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- ============================================================ -->
+    <!-- TAB 1: ONBOARDING DIGITAL WIZARD (SELF-SERVICE)              -->
+    <!-- ============================================================ -->
+    <div *ngIf="tabActiva === 'onboarding' && (!auth.usuario() || auth.usuario()?.rol === 'CLIENTE')" class="fade-in space-y-6">
+      
+      <!-- Wizard Banner -->
+      <div class="rounded-2xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 p-6 sm:p-8 shadow-xl text-white relative overflow-hidden">
+        <div class="relative z-10 max-w-2xl">
+          <span class="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold uppercase tracking-wider backdrop-blur">
+            Auto-Servicio Digital 100% Web
+          </span>
+          <h1 class="text-3xl sm:text-4xl font-extrabold font-display mt-3">Inscríbete y perfila tu condición física sin filas</h1>
+          <p class="mt-2 text-orange-100 text-sm sm:text-base leading-relaxed">
+            Elimina la espera en recepción. Registra tus biometría, cuestionario de salud PAR-Q y preferencias de entrenamiento para obtener tu carnet virtual de inmediato.
+          </p>
+        </div>
+      </div>
+
+      <!-- Steps Indicator -->
+      <div class="grid grid-cols-4 gap-2 sm:gap-4">
+        <div [class.border-orange-500]="pasoOnboarding >= 1" class="border-t-4 pt-2 transition">
+          <span class="text-xs text-orange-400 font-bold">PASO 1</span>
+          <p class="text-sm font-semibold truncate text-slate-200">Datos y Biometría</p>
+        </div>
+        <div [class.border-orange-500]="pasoOnboarding >= 2" class="border-t-4 pt-2 border-slate-800 transition">
+          <span class="text-xs text-slate-400 font-bold">PASO 2</span>
+          <p class="text-sm font-semibold truncate text-slate-200">Ficha Médica PAR-Q</p>
+        </div>
+        <div [class.border-orange-500]="pasoOnboarding >= 3" class="border-t-4 pt-2 border-slate-800 transition">
+          <span class="text-xs text-slate-400 font-bold">PASO 3</span>
+          <p class="text-sm font-semibold truncate text-slate-200">Preferencias</p>
+        </div>
+        <div [class.border-orange-500]="pasoOnboarding >= 4" class="border-t-4 pt-2 border-slate-800 transition">
+          <span class="text-xs text-slate-400 font-bold">PASO 4</span>
+          <p class="text-sm font-semibold truncate text-slate-200">Pase Digital QR</p>
+        </div>
+      </div>
+
+      <!-- PASO 1: Biometría & Cálculos Científicos -->
+      <div *ngIf="pasoOnboarding === 1" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Formulario Biométrico -->
+        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+          <h2 class="text-lg font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-weight-scale text-orange-500"></i> Evaluación Biometrica Inicial
+          </h2>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">DNI (8 dígitos)</label>
+              <input type="text" [(ngModel)]="formBio.dni" maxlength="8" placeholder="72345678"
+                     class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-orange-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Fecha de Nacimiento</label>
+              <input type="date" [(ngModel)]="formBio.fecha_nacimiento"
+                     class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-orange-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Sexo Biológico</label>
+              <select [(ngModel)]="formBio.sexo" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-orange-500 focus:outline-none">
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Teléfono Móvil</label>
+              <input type="text" [(ngModel)]="formBio.telefono" placeholder="961234567"
+                     class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-orange-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Peso Actual (kg): <span class="text-orange-400 font-bold">{{ formBio.peso }} kg</span></label>
+              <input type="range" [(ngModel)]="formBio.peso" min="40" max="150" step="0.5" class="w-full accent-orange-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Talla (cm): <span class="text-orange-400 font-bold">{{ formBio.talla }} cm</span></label>
+              <input type="range" [(ngModel)]="formBio.talla" min="130" max="210" step="1" class="w-full accent-orange-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Objetivo Fitness Principal</label>
+              <select [(ngModel)]="formBio.objetivo_fitness" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-orange-500 focus:outline-none">
+                <option value="PERDER_PESO">Perder Peso & Grasa</option>
+                <option value="GANAR_MUSCULO">Hipertrofia & Ganancia Muscular</option>
+                <option value="GANAR_FUERZA">Fuerza & Powerlifting</option>
+                <option value="RESISTENCIA">Resistencia Cardiovascular</option>
+                <option value="SALUD_GENERAL">Salud General & Postura</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Factor de Actividad Habitual</label>
+              <select [(ngModel)]="formBio.factor_actividad" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-orange-500 focus:outline-none">
+                <option value="SEDENTARIO">Sedentario (Oficina / Poco ejercicio)</option>
+                <option value="LIGERO">Ligero (1-3 días de actividad)</option>
+                <option value="MODERADO">Moderado (3-5 días de ejercicio)</option>
+                <option value="ACTIVO">Activo (6-7 días de entrenamiento)</option>
+                <option value="MUY_ACTIVO">Muy Activo (Atleta / Trabajo pesado)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pt-4 flex justify-end">
+            <button (click)="avanzarPaso1()" [disabled]="cargandoOnboarding"
+                    class="px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold transition flex items-center gap-2 shadow-lg shadow-orange-500/20 disabled:opacity-50">
+              <span *ngIf="cargandoOnboarding"><i class="fa-solid fa-spinner fa-spin"></i> Guardando...</span>
+              <span *ngIf="!cargandoOnboarding">Continuar a Ficha Médica <i class="fa-solid fa-arrow-right"></i></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Scientific Calculation Preview -->
+        <div class="bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+          <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-calculator text-orange-400"></i> Métricas en Tiempo Real
+          </h3>
+
+          <!-- IMC Card -->
+          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800">
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-slate-400">Índice de Masa Corporal (IMC)</span>
+              <span class="text-xs px-2 py-0.5 rounded-full font-semibold"
+                    [ngClass]="imcCalculado < 25 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'">
+                {{ clasificacionIMCCalculada }}
+              </span>
+            </div>
+            <div class="text-3xl font-extrabold font-display text-white mt-1">{{ imcCalculado }} <span class="text-xs text-slate-500 font-normal">kg/m²</span></div>
+          </div>
+
+          <!-- TMB Card -->
+          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800">
+            <span class="text-xs text-slate-400">Tasa Metabólica Basal (Harris-Benedict)</span>
+            <div class="text-2xl font-extrabold font-display text-orange-400 mt-1">{{ tmbEstimado }} <span class="text-xs text-slate-500 font-normal">kcal/día</span></div>
+            <p class="text-xs text-slate-500 mt-1">Calorías consumidas en reposo absoluto para funciones vitales.</p>
+          </div>
+
+          <!-- Concurrencia Info -->
+          <div class="p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 text-xs text-orange-200">
+            <i class="fa-solid fa-bolt text-orange-400 mr-1"></i>
+            <strong>Diseñado para Alta Concurrencia:</strong> Cientos de clientes pueden completar esta evaluación en paralelo sin bloquear la base de datos central.
+          </div>
+        </div>
+      </div>
+
+      <!-- PASO 2: Ficha Médica Deportiva & PAR-Q -->
+      <div *ngIf="pasoOnboarding === 2" class="max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+        <div class="border-b border-slate-800 pb-4">
+          <span class="text-xs px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 font-semibold border border-red-500/20">Cuestionario Médico Oficial</span>
+          <h2 class="text-xl font-bold text-white mt-2">Cuestionario PAR-Q de Aptitud para Actividad Física</h2>
+          <p class="text-sm text-slate-400 mt-1">Por tu seguridad, responde con total sinceridad. Esto permitirá a los entrenadores protegerte de lesiones.</p>
+        </div>
+
+        <div class="space-y-3">
+          <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+            <input type="checkbox" [(ngModel)]="formPARQ.p1" class="mt-1 accent-orange-500 w-4 h-4">
+            <span class="text-sm text-slate-300">1. ¿Alguna vez un médico le ha dicho que tiene un problema cardíaco y que solo debería realizar actividad física bajo prescripción médica?</span>
+          </label>
+          <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+            <input type="checkbox" [(ngModel)]="formPARQ.p2" class="mt-1 accent-orange-500 w-4 h-4">
+            <span class="text-sm text-slate-300">2. ¿Siente dolor en el pecho cuando realiza actividad física o ejercicio?</span>
+          </label>
+          <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+            <input type="checkbox" [(ngModel)]="formPARQ.p3" class="mt-1 accent-orange-500 w-4 h-4">
+            <span class="text-sm text-slate-300">3. ¿Ha tenido dolor en el pecho durante el último mes estando en reposo?</span>
+          </label>
+          <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+            <input type="checkbox" [(ngModel)]="formPARQ.p4" class="mt-1 accent-orange-500 w-4 h-4">
+            <span class="text-sm text-slate-300">4. ¿Pierde el equilibrio a causa de mareos o ha perdido alguna vez el conocimiento?</span>
+          </label>
+          <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+            <input type="checkbox" [(ngModel)]="formPARQ.p5" class="mt-1 accent-orange-500 w-4 h-4">
+            <span class="text-sm text-slate-300">5. ¿Tiene algún problema óseo o articular (ej. espalda, rodilla) que podría empeorar al hacer ejercicio?</span>
+          </label>
+          <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+            <input type="checkbox" [(ngModel)]="formPARQ.p6" class="mt-1 accent-orange-500 w-4 h-4">
+            <span class="text-sm text-slate-300">6. ¿Le receta su médico medicamentos para la presión arterial o condición cardíaca?</span>
+          </label>
+          <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700 transition">
+            <input type="checkbox" [(ngModel)]="formPARQ.p7" class="mt-1 accent-orange-500 w-4 h-4">
+            <span class="text-sm text-slate-300">7. ¿Existe alguna otra razón por la que no debería realizar actividad física?</span>
+          </label>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Tipo de Sangre</label>
+            <select [(ngModel)]="formPARQ.tipo_sangre" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+              <option value="O+">O Positivo (O+)</option>
+              <option value="O-">O Negativo (O-)</option>
+              <option value="A+">A Positivo (A+)</option>
+              <option value="A-">A Negativo (A-)</option>
+              <option value="B+">B Positivo (B+)</option>
+              <option value="B-">B Negativo (B-)</option>
+              <option value="AB+">AB Positivo (AB+)</option>
+              <option value="AB-">AB Negativo (AB-)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Lesiones o cirugías previas</label>
+            <input type="text" [(ngModel)]="formPARQ.lesiones_previas" placeholder="Ej. Esguince rodilla derecha (2024)"
+                   class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center pt-4">
+          <button (click)="pasoOnboarding = 1" class="text-sm text-slate-400 hover:text-white">← Regresar a biometría</button>
+          <button (click)="avanzarPaso2()" [disabled]="cargandoOnboarding"
+                  class="px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold transition">
+            Continuar a Preferencias →
+          </button>
+        </div>
+      </div>
+
+      <!-- PASO 3: Preferencias Deportivas -->
+      <div *ngIf="pasoOnboarding === 3" class="max-w-2xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+        <div>
+          <h2 class="text-xl font-bold text-white">Preferencias de Entrenamiento y Disponibilidad</h2>
+          <p class="text-sm text-slate-400 mt-1">Configura tus disciplinas favoritas para optimizar las recomendaciones de tu membresía.</p>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Horario Preferido de Asistencia</label>
+            <select [(ngModel)]="formPref.horario_preferido" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+              <option value="MANANA">Mañanas (6:00 AM - 11:00 AM)</option>
+              <option value="TARDE">Tardes (2:00 PM - 6:00 PM)</option>
+              <option value="NOCHE">Noches (6:00 PM - 10:30 PM)</option>
+              <option value="FLEXIBLE">Flexible / Rotativo</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Frecuencia Semanal Estimada (Días): {{ formPref.frecuencia_semanal }} días/semana</label>
+            <input type="range" [(ngModel)]="formPref.frecuencia_semanal" min="1" max="7" class="w-full accent-orange-500">
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Experiencia deportiva previa</label>
+            <textarea [(ngModel)]="formPref.experiencia_previa" rows="3" placeholder="Ej. Entrené 6 meses en casa, hacía calistenia..."
+                      class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white"></textarea>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center pt-4">
+          <button (click)="pasoOnboarding = 2" class="text-sm text-slate-400 hover:text-white">← Regresar a ficha médica</button>
+          <button (click)="finalizarOnboarding()" [disabled]="cargandoOnboarding"
+                  class="px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold transition">
+            Finalizar y Emitir Carnet Digital 🎉
+          </button>
+        </div>
+      </div>
+
+      <!-- PASO 4: Resumen & Carnet Digital Emitido -->
+      <div *ngIf="pasoOnboarding === 4" class="max-w-md mx-auto text-center space-y-6 fade-in">
+        <div class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-3xl">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div>
+          <h2 class="text-2xl font-bold text-white">¡Onboarding Digital Completado!</h2>
+          <p class="text-sm text-slate-400 mt-1">Tu perfil ha sido registrado y tus datos están listos para ser consumidos por el sistema de membresías y torniquetes.</p>
+        </div>
+
+        <!-- Pase Digital -->
+        <div class="bg-gradient-to-br from-slate-900 via-slate-850 to-orange-950/40 border border-orange-500/30 rounded-2xl p-6 shadow-2xl text-left relative overflow-hidden">
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="text-xs font-mono font-bold text-orange-400 tracking-wider">SMARTGYM PASS</span>
+              <h3 class="text-lg font-bold text-white mt-1">{{ auth.usuario()?.nombre }} {{ auth.usuario()?.apellido }}</h3>
+              <p class="text-xs text-slate-400 font-mono">{{ auth.usuario()?.numero_socio || 'SMART-2026-NUEVO' }}</p>
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30">ACTIVO</span>
+          </div>
+
+          <!-- Simulated QR Code -->
+          <div class="my-6 bg-white p-4 rounded-xl max-w-[160px] mx-auto text-center shadow">
+            <div class="w-32 h-32 mx-auto bg-slate-900 flex items-center justify-center text-white text-xs font-mono p-2 text-center rounded">
+              <i class="fa-solid fa-qrcode text-6xl text-slate-200"></i>
+            </div>
+            <span class="text-[10px] text-slate-800 font-mono mt-1 block font-bold">ACCESO DIGITAL</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-xs border-t border-slate-800 pt-3">
+            <div>
+              <span class="text-slate-500 block">Objetivo:</span>
+              <span class="font-semibold text-slate-200">{{ formBio.objetivo_fitness }}</span>
+            </div>
+            <div>
+              <span class="text-slate-500 block">Sede Central:</span>
+              <span class="font-semibold text-slate-200">Pucallpa, Ucayali</span>
+            </div>
+          </div>
+        </div>
+
+        <button (click)="cambiarTab('socio')" class="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold transition shadow-lg shadow-orange-500/20">
+          Ir a mi Portal de Socio →
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 2: PORTAL DE SOCIO (CLIENT DASHBOARD)                    -->
+    <!-- ============================================================ -->
+    <div *ngIf="tabActiva === 'socio' && auth.usuario()?.rol === 'CLIENTE'" class="fade-in space-y-6">
+      
+      <!-- Welcome Bar -->
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-6">
+        <div>
+          <span class="text-xs text-orange-400 font-bold tracking-wider font-mono">PANEL PERSONAL DEL SOCIO</span>
+          <h1 class="text-2xl font-bold text-white mt-1">Hola, {{ miPerfilData?.nombre || 'Socio' }} 👋</h1>
+          <p class="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-2">
+            <span>Socio N°: <span class="font-mono text-slate-200 font-semibold">{{ miPerfilData?.numero_socio || 'SMART-2026-0001' }}</span></span>
+            <span>• Meta: <span class="text-orange-400 font-semibold">{{ miPerfilData?.objetivo_fitness }}</span></span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                  [ngClass]="miPerfilData?.estado_membresia === 'ACTIVA' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : (miPerfilData?.estado_membresia === 'PENDIENTE' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30')">
+              <i class="fa-solid fa-circle-check mr-1" *ngIf="miPerfilData?.estado_membresia === 'ACTIVA'"></i>
+              <i class="fa-solid fa-clock mr-1" *ngIf="miPerfilData?.estado_membresia === 'PENDIENTE'"></i>
+              Membresía: {{ miPerfilData?.estado_membresia || 'PENDIENTE' }}
+            </span>
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button (click)="conectarConMsMembresias()"
+                  [ngClass]="miPerfilData?.estado_membresia === 'ACTIVA'
+                    ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30'
+                    : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg shadow-orange-500/20 border border-transparent'"
+                  class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+            <i class="fa-solid" [ngClass]="miPerfilData?.estado_membresia === 'ACTIVA' ? 'fa-gem' : 'fa-crown'"></i>
+            <span>{{ miPerfilData?.estado_membresia === 'ACTIVA' ? 'Mi Plan / Upgrades' : (miPerfilData?.estado_membresia === 'VENCIDA' ? 'Renovar Membresía' : 'Planes y Membresías') }}</span>
+          </button>
+          <button (click)="abrirModalEditarPerfil()" class="px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 text-xs font-semibold border border-orange-500/30 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-user-pen"></i> Editar Mis Datos
+          </button>
+          <button (click)="abrirModalPassword()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5" title="Cambiar clave para asegurar privacidad">
+            <i class="fa-solid fa-key text-orange-400"></i> Cambiar Contraseña
+          </button>
+          <button (click)="cargarPortalSocio()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-xs transition">
+            <i class="fa-solid fa-rotate-right mr-1"></i> Actualizar
+          </button>
+        </div>
+      </div>
+
+      <!-- Banner Directo a MS-Membresías (Visible cuando la membresía aún está Pendiente o Vencida) -->
+      <div *ngIf="miPerfilData && miPerfilData.estado_membresia !== 'ACTIVA'"
+           class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-slate-900 border border-amber-500/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-lg">
+        <div class="flex items-start sm:items-center gap-3.5">
+          <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-orange-500/20">
+            <i class="fa-solid fa-crown text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              Tu perfil biométrico está listo — ¡Activa tu Membresía!
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase font-mono">
+                {{ miPerfilData.estado_membresia || 'PENDIENTE' }}
+              </span>
+            </h3>
+            <p class="text-xs text-slate-300 mt-1">
+              Conéctate al <strong class="text-orange-400">Microservicio de Membresías</strong> enviando tu objetivo (<span class="text-white font-semibold">{{ miPerfilData.objetivo_fitness }}</span>) y preferencias para ver planes y promociones personalizadas.
+            </p>
+          </div>
+        </div>
+        <button (click)="conectarConMsMembresias()"
+                class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold shadow-lg shadow-orange-500/25 transition whitespace-nowrap flex items-center gap-2">
+          <span>Ir a Planes y Promociones</span>
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+        </button>
+      </div>
+
+      <!-- Biometric & Nutrition Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        
+        <!-- Peso & Talla -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow">
+          <span class="text-xs text-slate-400">Peso & Talla Actual</span>
+          <div class="text-2xl font-extrabold text-white mt-1">{{ miPerfilData?.peso_actual || '67.0' }} <span class="text-xs text-slate-500">kg</span></div>
+          <span class="text-xs text-slate-400 font-medium">Talla: {{ miPerfilData?.talla_actual || '165' }} cm</span>
+        </div>
+
+        <!-- IMC -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow">
+          <div class="flex justify-between items-start">
+            <span class="text-xs text-slate-400">Índice IMC</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-400">
+              {{ miPerfilData?.clasificacion_imc || 'NORMAL' }}
+            </span>
+          </div>
+          <div class="text-2xl font-extrabold text-white mt-1">{{ miPerfilData?.imc_actual || '24.61' }}</div>
+          <span class="text-xs text-slate-400">Rango saludable OMS</span>
+        </div>
+
+        <!-- TMB & Gasto -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow">
+          <span class="text-xs text-slate-400">Gasto Diario (TDEE)</span>
+          <div class="text-2xl font-extrabold text-orange-400 mt-1">{{ miPerfilData?.tdee_actual || '2000' }} <span class="text-xs text-slate-500">kcal</span></div>
+          <span class="text-xs text-slate-400">TMB Basal: {{ miPerfilData?.tmb_actual || '1454' }} kcal</span>
+        </div>
+
+        <!-- Macronutrientes -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow">
+          <span class="text-xs text-slate-400">Macros Sugeridos</span>
+          <div class="grid grid-cols-3 gap-1 mt-2 text-center text-xs">
+            <div class="bg-slate-950 p-1.5 rounded-lg border border-slate-800">
+              <span class="text-[10px] text-slate-500 block">PROT</span>
+              <span class="font-bold text-orange-400">{{ miPerfilData?.macronutrientes_sugeridos?.proteinas_g || 160 }}g</span>
+            </div>
+            <div class="bg-slate-950 p-1.5 rounded-lg border border-slate-800">
+              <span class="text-[10px] text-slate-500 block">CARB</span>
+              <span class="font-bold text-amber-400">{{ miPerfilData?.macronutrientes_sugeridos?.carbohidratos_g || 140 }}g</span>
+            </div>
+            <div class="bg-slate-950 p-1.5 rounded-lg border border-slate-800">
+              <span class="text-[10px] text-slate-500 block">GRAS</span>
+              <span class="font-bold text-blue-400">{{ miPerfilData?.macronutrientes_sugeridos?.grasas_g || 44 }}g</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Carnet Digital & Metas -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Carnet Digital Socio -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-base font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-qrcode text-orange-500"></i> Carnet Virtual & QR
+              </h2>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">TORNIQUETE OK</span>
+            </div>
+
+            <div class="bg-gradient-to-tr from-slate-950 to-slate-900 border border-orange-500/30 rounded-xl p-5 text-center">
+              <div class="w-36 h-36 mx-auto bg-white p-3 rounded-xl shadow-lg flex items-center justify-center">
+                <i class="fa-solid fa-qrcode text-8xl text-slate-900"></i>
+              </div>
+              <div class="mt-3 font-mono text-sm font-bold text-orange-400">{{ miPerfilData?.numero_socio || 'SMART-2026-0001' }}</div>
+              <p class="text-[11px] text-slate-400 mt-1">Muestra este código en el lector del gimnasio para validar tu acceso sin contacto.</p>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-800 text-xs text-slate-400 flex justify-between">
+            <span>Tipo de Sangre: <strong class="text-white">{{ miPerfilData?.tipo_sangre || 'O+' }}</strong></span>
+            <span>Riesgo Médico: <strong class="text-emerald-400">{{ miPerfilData?.nivel_riesgo || 'APTO' }}</strong></span>
+          </div>
+        </div>
+
+        <!-- Metas Personales & Progreso -->
+        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+          <div class="flex justify-between items-center">
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-bullseye text-orange-500"></i> Mis Metas de Entrenamiento
+            </h2>
+            <span class="text-xs text-slate-400">{{ misMetasList.length }} metas registradas</span>
+          </div>
+
+          <!-- Lista de Metas con Avance Dinámico -->
+          <div class="space-y-3">
+            <div *ngFor="let m of misMetasList" class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold uppercase tracking-wider"
+                        [ngClass]="m.tipo_meta === 'PESO_OBJETIVO' ? 'bg-orange-500/20 text-orange-400' : (m.tipo_meta === 'PERSONALIZADA' ? 'bg-blue-500/20 text-blue-400' : 'bg-emerald-500/20 text-emerald-400')">
+                    {{ m.tipo_meta === 'PESO_OBJETIVO' ? 'Control de Peso' : (m.tipo_meta === 'PERSONALIZADA' ? 'Rendimiento / Ejercicio' : m.tipo_meta) }}
+                  </span>
+                  <h3 class="font-bold text-white text-sm mt-1">{{ m.descripcion }}</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="text-right">
+                    <span class="text-sm font-mono font-extrabold text-orange-400">{{ m.porcentaje_avance }}%</span>
+                    <span class="block text-[10px] font-semibold" [ngClass]="m.porcentaje_avance >= 100 ? 'text-emerald-400' : 'text-slate-400'">
+                      {{ m.porcentaje_avance >= 100 ? '¡COMPLETADA! 🏆' : 'En progreso' }}
+                    </span>
+                  </div>
+                  <!-- Botón Eliminar Meta (Solo activa si la meta no ha sido completada) -->
+                  <button *ngIf="m.porcentaje_avance < 100 && m.estado !== 'COMPLETADA'"
+                          (click)="eliminarMeta(m.meta_id)"
+                          class="p-1.5 ml-1 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                          title="Eliminar meta de mi plan">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                  </button>
+                  <span *ngIf="m.porcentaje_avance >= 100 || m.estado === 'COMPLETADA'"
+                        class="p-1.5 ml-1 text-amber-400 text-sm"
+                        title="Logro histórico: Meta cumplida protegida contra eliminación">
+                    <i class="fa-solid fa-trophy"></i>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Progress Bar -->
+              <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                <div class="h-2.5 rounded-full transition-all duration-500"
+                     [ngClass]="m.porcentaje_avance >= 100 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-orange-500 to-amber-400'"
+                     [style.width.%]="m.porcentaje_avance > 100 ? 100 : m.porcentaje_avance"></div>
+              </div>
+
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs text-slate-400 gap-2 pt-1 border-t border-slate-850">
+                <div class="flex flex-wrap gap-3">
+                  <span *ngIf="m.valor_inicial !== null && m.valor_inicial !== undefined">Inicio: <strong class="text-slate-300">{{ m.valor_inicial }} {{ m.unidad }}</strong></span>
+                  <span>Actual: <strong class="text-white">{{ m.valor_actual }} {{ m.unidad }}</strong></span>
+                  <span>Objetivo: <strong class="text-orange-400">{{ m.valor_objetivo }} {{ m.unidad }}</strong></span>
+                </div>
+                
+                <!-- Botones para registrar avance directo (Deshabilitados al cumplirse la meta) -->
+                <div *ngIf="m.porcentaje_avance < 100 && m.estado !== 'COMPLETADA'" class="flex items-center gap-1.5 self-end sm:self-auto">
+                  <span class="text-[10px] text-slate-500 mr-1">Ajustar:</span>
+                  <button *ngIf="m.tipo_meta === 'PESO_OBJETIVO'" (click)="actualizarAvanceMeta(m, -0.5)"
+                          class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold border border-slate-700" title="Bajé 0.5 kg">
+                    -0.5 kg
+                  </button>
+                  <button *ngIf="m.tipo_meta === 'PESO_OBJETIVO'" (click)="actualizarAvanceMeta(m, 0.5)"
+                          class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold border border-slate-700" title="Subí 0.5 kg">
+                    +0.5 kg
+                  </button>
+                  <button *ngIf="m.tipo_meta === 'PERSONALIZADA'" (click)="actualizarAvanceMeta(m, 1)"
+                          class="px-2 py-0.5 rounded bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 text-[11px] font-semibold border border-orange-500/30" title="Sumar 1">
+                    +1 {{ m.unidad }}
+                  </button>
+                  <button *ngIf="m.tipo_meta === 'PERSONALIZADA'" (click)="actualizarAvanceMeta(m, 5)"
+                          class="px-2 py-0.5 rounded bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 text-[11px] font-semibold border border-orange-500/30" title="Sumar 5">
+                    +5 {{ m.unidad }}
+                  </button>
+                  <button *ngIf="m.tipo_meta === 'ASISTENCIA_SEMANAL'" (click)="actualizarAvanceMeta(m, 1)"
+                          class="px-2 py-0.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-[11px] font-semibold border border-emerald-500/30" title="Asistí hoy">
+                    +1 Día
+                  </button>
+                </div>
+                <div *ngIf="m.porcentaje_avance >= 100 || m.estado === 'COMPLETADA'" class="flex items-center gap-1.5 self-end sm:self-auto text-emerald-400 text-xs font-semibold bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                  <i class="fa-solid fa-lock text-[10px]"></i>
+                  <span>Meta Cumplida (Bloqueada)</span>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="misMetasList.length === 0" class="text-center py-6 text-slate-500 text-xs">
+              No tienes metas activas. Selecciona un tipo de meta y fíjate un objetivo a continuación.
+            </div>
+          </div>
+
+          <!-- Form Nueva Meta con Tipo Lógico -->
+          <div class="pt-4 border-t border-slate-800 space-y-3">
+            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">Fijar Nueva Meta Personal:</span>
+            
+            <!-- Selector de tipo de meta -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button (click)="cambiarTipoMeta('PESO_OBJETIVO')"
+                      [ngClass]="nuevaMeta.tipo_meta === 'PESO_OBJETIVO' ? 'bg-orange-500 text-white border-orange-500' : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'"
+                      class="px-2.5 py-1.5 rounded-xl border text-xs font-semibold text-center transition">
+                ⚖️ Peso Corporal
+              </button>
+              <button (click)="cambiarTipoMeta('PERSONALIZADA')"
+                      [ngClass]="nuevaMeta.tipo_meta === 'PERSONALIZADA' ? 'bg-orange-500 text-white border-orange-500' : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'"
+                      class="px-2.5 py-1.5 rounded-xl border text-xs font-semibold text-center transition">
+                💪 Ejercicios / Reps
+              </button>
+              <button (click)="cambiarTipoMeta('ASISTENCIA_SEMANAL')"
+                      [ngClass]="nuevaMeta.tipo_meta === 'ASISTENCIA_SEMANAL' ? 'bg-orange-500 text-white border-orange-500' : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'"
+                      class="px-2.5 py-1.5 rounded-xl border text-xs font-semibold text-center transition">
+                📅 Asistencia Semanal
+              </button>
+              <button (click)="cambiarTipoMeta('PORCENTAJE_GRASA')"
+                      [ngClass]="nuevaMeta.tipo_meta === 'PORCENTAJE_GRASA' ? 'bg-orange-500 text-white border-orange-500' : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'"
+                      class="px-2.5 py-1.5 rounded-xl border text-xs font-semibold text-center transition">
+                📉 % Grasa Corporal
+              </button>
+            </div>
+
+            <!-- Campos de la meta -->
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+              <div class="sm:col-span-5">
+                <label class="block text-[10px] text-slate-400 mb-0.5">Descripción de la Meta</label>
+                <input type="text" [(ngModel)]="nuevaMeta.descripcion" placeholder="Ej. Bajar a 65 kg / 15 flexiones"
+                       class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-[10px] text-slate-400 mb-0.5">Punto Partida (Inicio)</label>
+                <input type="number" [(ngModel)]="nuevaMeta.valor_actual" placeholder="Inicial"
+                       class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" title="Valor inicial de partida">
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-[10px] text-slate-400 mb-0.5">Valor Objetivo (Meta)</label>
+                <input type="number" [(ngModel)]="nuevaMeta.valor_objetivo" placeholder="Meta"
+                       class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" title="Valor objetivo a alcanzar">
+              </div>
+              <div class="sm:col-span-1">
+                <label class="block text-[10px] text-slate-400 mb-0.5">Unidad</label>
+                <input type="text" [value]="nuevaMeta.unidad" readonly
+                       class="w-full bg-slate-900 border border-slate-800 rounded-xl px-2 py-2 text-xs text-orange-400 text-center font-mono font-bold select-none cursor-not-allowed"
+                       title="Unidad del sistema no editable (establecida por el tipo de meta)">
+              </div>
+              <div class="sm:col-span-2 flex items-end">
+                <button (click)="guardarMeta()" class="w-full py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold transition shadow-md shadow-orange-500/20">
+                  + Fijar Meta
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Historial de Mediciones Físicas -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+        <h2 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-chart-line text-orange-500"></i> Historial Longitudinal de Mediciones
+        </h2>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="text-slate-400 border-b border-slate-800 uppercase font-mono text-[10px]">
+              <tr>
+                <th class="py-2.5 px-3">Fecha</th>
+                <th class="py-2.5 px-3">Peso (kg)</th>
+                <th class="py-2.5 px-3">Talla (cm)</th>
+                <th class="py-2.5 px-3">IMC</th>
+                <th class="py-2.5 px-3">TMB (kcal)</th>
+                <th class="py-2.5 px-3">% Grasa</th>
+                <th class="py-2.5 px-3">Notas</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50">
+              <tr *ngFor="let m of miProgresoList" class="hover:bg-slate-800/30 transition">
+                <td class="py-2.5 px-3 font-mono text-slate-300">{{ m.fecha_medicion | date:'dd/MM/yyyy' }}</td>
+                <td class="py-2.5 px-3 font-bold text-white">{{ m.peso }}</td>
+                <td class="py-2.5 px-3 text-slate-300">{{ m.talla }}</td>
+                <td class="py-2.5 px-3">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-semibold"
+                        [ngClass]="m.imc < 25 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'">
+                    {{ m.imc }} ({{ m.clasificacion_imc }})
+                  </span>
+                </td>
+                <td class="py-2.5 px-3 font-mono text-slate-300">{{ m.tmb }}</td>
+                <td class="py-2.5 px-3 text-slate-300">{{ m.porcentaje_grasa ? m.porcentaje_grasa + '%' : '-' }}</td>
+                <td class="py-2.5 px-3 text-slate-400 italic max-w-xs truncate">{{ m.notas || '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 3: PANEL DEL ENTRENADOR (STAFF GYM)                       -->
+    <!-- ============================================================ -->
+    <div *ngIf="tabActiva === 'entrenador' && auth.usuario()?.rol === 'ENTRENADOR'" class="fade-in space-y-6">
+      
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-6">
+        <div>
+          <span class="text-xs text-orange-400 font-bold tracking-wider font-mono">SEGUIMIENTO DEPORTIVO</span>
+          <h1 class="text-2xl font-bold text-white mt-1">Expediente de Clientes & Mediciones</h1>
+          <p class="text-xs text-slate-400 mt-0.5">Controla la evolución de los socios, registra nuevas mediciones y actualiza sus objetivos.</p>
+        </div>
+        <div class="flex gap-2">
+          <input type="text" [(ngModel)]="filtroBusqueda" (keyup.enter)="cargarPanelEntrenador()" placeholder="Buscar socio..."
+                 class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white">
+          <button (click)="cargarPanelEntrenador()" class="px-3 py-1.5 rounded-xl bg-orange-500 text-white text-xs font-semibold">
+            Buscar
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Lista de Clientes -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-2 max-h-[600px] overflow-y-auto">
+          <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider px-2 py-1">Socios Asignados ({{ clientesList.length }})</h3>
+          
+          <div *ngFor="let c of clientesList" (click)="seleccionarCliente(c)"
+               [class.border-orange-500]="clienteSeleccionado?.cliente?.cliente_id === c.cliente_id"
+               class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 cursor-pointer transition space-y-1">
+            <div class="flex justify-between items-start">
+              <span class="font-bold text-sm text-white">{{ c.nombre }} {{ c.apellido }}</span>
+              <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold"
+                    [ngClass]="c.nivel_riesgo === 'PRECAUCION' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'">
+                {{ c.nivel_riesgo || 'APTO' }}
+              </span>
+            </div>
+            <div class="text-xs text-slate-400 font-mono flex justify-between">
+              <span>{{ c.numero_socio }}</span>
+              <span>DNI: {{ c.dni }}</span>
+            </div>
+            <div class="text-[11px] text-slate-500 flex justify-between pt-1 border-t border-slate-850">
+              <span>{{ c.peso_actual }} kg • {{ c.talla_actual }} cm</span>
+              <span class="text-orange-400 font-medium">{{ c.objetivo_fitness }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ficha y Registro del Cliente Seleccionado -->
+        <div class="lg:col-span-2 space-y-6" *ngIf="clienteSeleccionado">
+          
+          <!-- Encabezado del Socio -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-xs px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 font-mono font-bold">{{ clienteSeleccionado.cliente.numero_socio }}</span>
+                <h2 class="text-xl font-bold text-white mt-1">{{ clienteSeleccionado.cliente.nombre }} {{ clienteSeleccionado.cliente.apellido }}</h2>
+                <p class="text-xs text-slate-400">Email: {{ clienteSeleccionado.cliente.email }} • Tel: {{ clienteSeleccionado.cliente.telefono || 'Sin registrar' }}</p>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-slate-400 block">Salud PAR-Q</span>
+                <span class="text-xs font-bold" [ngClass]="clienteSeleccionado.cliente.nivel_riesgo === 'PRECAUCION' ? 'text-amber-400' : 'text-emerald-400'">
+                  {{ clienteSeleccionado.cliente.nivel_riesgo || 'APTO' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Datos Rápidos -->
+            <div class="grid grid-cols-4 gap-2 mt-4 text-center text-xs">
+              <div class="bg-slate-950 p-2 rounded-xl border border-slate-800">
+                <span class="text-slate-500 text-[10px] block">Peso Actual</span>
+                <span class="font-bold text-white text-sm">{{ clienteSeleccionado.cliente.peso_actual }} kg</span>
+              </div>
+              <div class="bg-slate-950 p-2 rounded-xl border border-slate-800">
+                <span class="text-slate-500 text-[10px] block">IMC Actual</span>
+                <span class="font-bold text-white text-sm">{{ clienteSeleccionado.cliente.imc_actual }}</span>
+              </div>
+              <div class="bg-slate-950 p-2 rounded-xl border border-slate-800">
+                <span class="text-slate-500 text-[10px] block">TDEE Gasto</span>
+                <span class="font-bold text-orange-400 text-sm">{{ clienteSeleccionado.cliente.tdee_actual }} kcal</span>
+              </div>
+              <div class="bg-slate-950 p-2 rounded-xl border border-slate-800">
+                <span class="text-slate-500 text-[10px] block">Objetivo</span>
+                <span class="font-bold text-amber-400 text-[11px] truncate block">{{ clienteSeleccionado.cliente.objetivo_fitness }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Registrar Nueva Medición -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-plus-circle text-orange-500"></i> Registrar Nueva Medición en Gimnasio
+            </h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">Nuevo Peso (kg)</label>
+                <input type="number" step="0.1" [(ngModel)]="formNuevaMedicion.peso" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">Talla (cm)</label>
+                <input type="number" step="0.5" [(ngModel)]="formNuevaMedicion.talla" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">% Grasa Corporal</label>
+                <input type="number" step="0.1" [(ngModel)]="formNuevaMedicion.porcentaje_grasa" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Observaciones / Notas del Entrenador</label>
+              <input type="text" [(ngModel)]="formNuevaMedicion.notas" placeholder="Ej. Aumento de masa magra, buena postura en sentadilla"
+                     class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+            </div>
+
+            <div class="flex justify-end">
+              <button (click)="guardarMedicionEntrenador()" class="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold">
+                Guardar y Recalcular IMC/TDEE
+              </button>
+            </div>
+          </div>
+
+          <!-- Observaciones Anteriores -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-comments text-orange-500"></i> Notas y Observaciones Registradas
+            </h3>
+
+            <div class="space-y-2">
+              <div *ngFor="let obs of clienteSeleccionado.observaciones" class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-orange-400 font-mono">{{ obs.tipo }}</span>
+                  <span class="text-slate-500">{{ obs.created_at | date:'short' }}</span>
+                </div>
+                <p class="text-slate-300">{{ obs.contenido }}</p>
+                <span class="text-[10px] text-slate-500 block">Por: {{ obs.entrenador_nombre }} {{ obs.entrenador_apellido }}</span>
+              </div>
+            </div>
+
+            <!-- Nueva Observación -->
+            <div class="pt-2 border-t border-slate-800 flex gap-2">
+              <input type="text" [(ngModel)]="formNuevaObs.contenido" placeholder="Escribir recomendación para el socio..."
+                     class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+              <button (click)="guardarObservacionEntrenador()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold">
+                Enviar Nota
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 4: ADMINISTRACIÓN & DEMO DE CONCURRENCIA                  -->
+    <!-- ============================================================ -->
+    <div *ngIf="tabActiva === 'admin' && auth.usuario()?.rol === 'ADMIN'" class="fade-in space-y-6">
+      
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-6">
+        <div>
+          <span class="text-xs text-orange-400 font-bold tracking-wider font-mono">CONTROL DEL MICROSERVICIO</span>
+          <h1 class="text-2xl font-bold text-white mt-1">Métricas, Personal y Auditoría</h1>
+          <p class="text-xs text-slate-400 mt-0.5">Demuestra el funcionamiento de microservicios y ejecuta simulaciones de carga en vivo.</p>
+        </div>
+        <button (click)="cargarPanelAdmin()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs">
+          <i class="fa-solid fa-rotate-right mr-1"></i> Recargar Métricas
+        </button>
+      </div>
+
+      <!-- Métricas Globales -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow">
+          <span class="text-xs text-slate-400">Total Usuarios</span>
+          <div class="text-3xl font-extrabold text-white mt-1">{{ metricasAdmin?.metricas_globales?.total_usuarios || 0 }}</div>
+          <span class="text-xs text-emerald-400">{{ metricasAdmin?.metricas_globales?.usuarios_activos || 0 }} activos</span>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow">
+          <span class="text-xs text-slate-400">Total Socios / Clientes</span>
+          <div class="text-3xl font-extrabold text-orange-400 mt-1">{{ metricasAdmin?.metricas_globales?.total_socios || 0 }}</div>
+          <span class="text-xs text-slate-400">Con expediente creado</span>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow">
+          <span class="text-xs text-slate-400">Mediciones Registradas</span>
+          <div class="text-3xl font-extrabold text-amber-400 mt-1">{{ metricasAdmin?.metricas_globales?.total_mediciones_registradas || 0 }}</div>
+          <span class="text-xs text-slate-400">En historial clínico</span>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow">
+          <span class="text-xs text-slate-400">Observaciones Técnicas</span>
+          <div class="text-3xl font-extrabold text-blue-400 mt-1">{{ metricasAdmin?.metricas_globales?.total_observaciones_realizadas || 0 }}</div>
+          <span class="text-xs text-slate-400">Notas de entrenadores</span>
+        </div>
+      </div>
+
+      <!-- LIVE CONCURRENCY TEST FOR PROFESSOR DEMO -->
+      <div class="bg-gradient-to-r from-slate-900 via-slate-850 to-orange-950/30 border border-orange-500/40 rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-bold border border-orange-500/30 font-mono">DEMOSTRACIÓN DE ARQUITECTURA</span>
+            <h2 class="text-lg font-bold text-white mt-1">Prueba de Alta Demanda en Vivo (30 Clientes Simultáneos)</h2>
+            <p class="text-xs text-slate-400">Dispara peticiones paralelas con <code>Promise.all()</code> para demostrar que el microservicio maneja registros concurrentes sin caídas ni bloqueos de base de datos.</p>
+          </div>
+          <button (click)="simularConcurrencia()" [disabled]="ejecutandoConcurrencia"
+                  class="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-xs transition shadow-lg shadow-orange-500/20 disabled:opacity-50 whitespace-nowrap">
+            <span *ngIf="ejecutandoConcurrencia"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Disparando 30 peticiones...</span>
+            <span *ngIf="!ejecutandoConcurrencia"><i class="fa-solid fa-bolt mr-1"></i> Ejecutar Prueba Concurrente</span>
+          </button>
+        </div>
+
+        <div *ngIf="resultadoConcurrencia" class="p-4 rounded-xl bg-slate-950 border border-emerald-500/30 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center fade-in">
+          <div>
+            <span class="text-xs text-slate-400 block">Total Peticiones:</span>
+            <span class="text-xl font-bold text-white font-mono">{{ resultadoConcurrencia.total }}</span>
+          </div>
+          <div>
+            <span class="text-xs text-slate-400 block">Exitosas (HTTP 201):</span>
+            <span class="text-xl font-bold text-emerald-400 font-mono">{{ resultadoConcurrencia.exitosos }} ✅</span>
+          </div>
+          <div>
+            <span class="text-xs text-slate-400 block">Tiempo Total:</span>
+            <span class="text-xl font-bold text-white font-mono">{{ resultadoConcurrencia.tiempoMs }} ms</span>
+          </div>
+          <div>
+            <span class="text-xs text-slate-400 block">Rendimiento:</span>
+            <span class="text-xl font-bold text-orange-400 font-mono">{{ resultadoConcurrencia.tps }} req/seg</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-navegación del Administrador -->
+      <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
+        <button (click)="subTabAdmin = 'staff'"
+                [class.bg-orange-500]="subTabAdmin === 'staff'"
+                [class.text-white]="subTabAdmin === 'staff'"
+                class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 bg-slate-900 border border-slate-800 hover:text-white transition flex items-center gap-2">
+          <i class="fa-solid fa-users-gear"></i> Personal del Sistema (Staff)
+        </button>
+        <button (click)="subTabAdmin = 'clientes'"
+                [class.bg-orange-500]="subTabAdmin === 'clientes'"
+                [class.text-white]="subTabAdmin === 'clientes'"
+                class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 bg-slate-900 border border-slate-800 hover:text-white transition flex items-center gap-2">
+          <i class="fa-solid fa-address-book"></i> Socios / Clientes (Datos Administrativos)
+        </button>
+        <button (click)="subTabAdmin = 'auditoria'"
+                [class.bg-orange-500]="subTabAdmin === 'auditoria'"
+                [class.text-white]="subTabAdmin === 'auditoria'"
+                class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 bg-slate-900 border border-slate-800 hover:text-white transition flex items-center gap-2">
+          <i class="fa-solid fa-clock-rotate-left"></i> Bitácora de Auditoría
+        </button>
+      </div>
+
+      <!-- VISTA 1: PERSONAL DEL SISTEMA (ADMINS Y ENTRENADORES) -->
+      <div *ngIf="subTabAdmin === 'staff'" class="space-y-6 fade-in">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Form Crear Staff -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-user-plus text-orange-500"></i> Registrar Nuevo Personal
+            </h3>
+
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">Rol</label>
+                <select [(ngModel)]="formStaff.rol" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                  <option value="ENTRENADOR">Entrenador del Gimnasio</option>
+                  <option value="ADMIN">Administrador de Sistema</option>
+                </select>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Nombres</label>
+                  <input type="text" [(ngModel)]="formStaff.nombre" placeholder="Nombre" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1">Apellidos</label>
+                  <input type="text" [(ngModel)]="formStaff.apellido" placeholder="Apellido" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">Email Institucional</label>
+                <input type="email" [(ngModel)]="formStaff.email" placeholder="staff@smartgym.pe" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+              </div>
+              <div *ngIf="formStaff.rol === 'ENTRENADOR'">
+                <label class="block text-xs text-slate-400 mb-1">Especialidad Deportiva</label>
+                <input type="text" [(ngModel)]="formStaff.especialidad" placeholder="Ej. Musculación y CrossFit" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-xs text-slate-400 mb-1">Teléfono</label>
+                <input type="text" [(ngModel)]="formStaff.telefono" placeholder="961234567" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+              </div>
+            </div>
+
+            <button (click)="guardarStaff()" class="w-full py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-xs transition">
+              Crear Cuenta de Personal
+            </button>
+          </div>
+
+          <!-- Tabla de Staff -->
+          <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-users text-orange-500"></i> Personal y Administradores Activos ({{ listaStaff.length }})
+            </h3>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="text-slate-400 border-b border-slate-800 uppercase font-mono text-[10px]">
+                  <tr>
+                    <th class="py-2.5 px-3">Nombre</th>
+                    <th class="py-2.5 px-3">Email</th>
+                    <th class="py-2.5 px-3">Rol</th>
+                    <th class="py-2.5 px-3">Especialidad / Tel</th>
+                    <th class="py-2.5 px-3">Estado</th>
+                    <th class="py-2.5 px-3 text-right">Acción</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/50">
+                  <tr *ngFor="let s of listaStaff" class="hover:bg-slate-800/30">
+                    <td class="py-2.5 px-3 font-bold text-white">{{ s.nombre }} {{ s.apellido }}</td>
+                    <td class="py-2.5 px-3 font-mono text-slate-300">{{ s.email }}</td>
+                    <td class="py-2.5 px-3">
+                      <span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono"
+                            [ngClass]="s.rol_nombre === 'ADMIN' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'">
+                        {{ s.rol_nombre }}
+                      </span>
+                    </td>
+                    <td class="py-2.5 px-3 text-slate-400">
+                      <div>{{ s.especialidad || 'Administración' }}</div>
+                      <div class="text-[10px] text-slate-500">{{ s.personal_telefono || '-' }}</div>
+                    </td>
+                    <td class="py-2.5 px-3">
+                      <span class="px-2 py-0.5 rounded text-[10px] font-semibold"
+                            [ngClass]="s.activo ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'">
+                        {{ s.activo ? 'ACTIVO' : 'INACTIVO' }}
+                      </span>
+                    </td>
+                    <td class="py-2.5 px-3 text-right">
+                      <button (click)="abrirModalEditarStaff(s)" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-orange-500/20 text-slate-300 hover:text-orange-400 text-xs font-semibold transition border border-slate-700">
+                        <i class="fa-solid fa-pen-to-square mr-1"></i> Editar
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- VISTA 2: GESTIÓN ADMINISTRATIVA DE CLIENTES / SOCIOS -->
+      <div *ngIf="subTabAdmin === 'clientes'" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4 fade-in">
+        <div class="flex justify-between items-center">
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-address-book text-orange-500"></i> Directorio Administrativo de Clientes ({{ listaClientesAdmin.length }})
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">El administrador gestiona la cuenta e identidad del usuario. El estado de la membresía se sincroniza automáticamente con el microservicio MS-Membresías.</p>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="text-slate-400 border-b border-slate-800 uppercase font-mono text-[10px]">
+              <tr>
+                <th class="py-2.5 px-3">N° Socio</th>
+                <th class="py-2.5 px-3">Nombres y Apellidos</th>
+                <th class="py-2.5 px-3">DNI</th>
+                <th class="py-2.5 px-3">Correo Electrónico</th>
+                <th class="py-2.5 px-3">Teléfono</th>
+                <th class="py-2.5 px-3">Estado Cuenta</th>
+                <th class="py-2.5 px-3">Membresía</th>
+                <th class="py-2.5 px-3">Registro</th>
+                <th class="py-2.5 px-3 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50">
+              <tr *ngFor="let c of listaClientesAdmin" class="hover:bg-slate-800/30">
+                <td class="py-2.5 px-3 font-mono font-bold text-orange-400">{{ c.numero_socio || 'SIN-SOCIO' }}</td>
+                <td class="py-2.5 px-3 font-bold text-white">{{ c.nombre }} {{ c.apellido }}</td>
+                <td class="py-2.5 px-3 font-mono text-slate-300">{{ c.dni || '-' }}</td>
+                <td class="py-2.5 px-3 text-slate-300">{{ c.email }}</td>
+                <td class="py-2.5 px-3 text-slate-400">{{ c.cliente_telefono || '-' }}</td>
+                <td class="py-2.5 px-3">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-semibold"
+                        [ngClass]="c.activo ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'"
+                        [title]="c.activo ? 'Cuenta habilitada para iniciar sesión' : 'Cuenta suspendida'">
+                    {{ c.activo ? 'ACTIVO' : 'SUSPENDIDO' }}
+                  </span>
+                </td>
+                <td class="py-2.5 px-3">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase"
+                        [ngClass]="c.estado_membresia === 'ACTIVA' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : (c.estado_membresia === 'PENDIENTE' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20')"
+                        [title]="'Sincronizado vía API con MS-Membresías'">
+                    {{ c.estado_membresia || 'PENDIENTE' }}
+                  </span>
+                </td>
+                <td class="py-2.5 px-3 text-slate-500 text-[11px]">{{ c.created_at | date:'dd/MM/yyyy' }}</td>
+                <td class="py-2.5 px-3 text-right">
+                  <button (click)="abrirModalEditarCliente(c)" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-orange-500/20 text-slate-300 hover:text-orange-400 text-xs font-semibold transition border border-slate-700">
+                    <i class="fa-solid fa-pen-to-square mr-1"></i> Modificar
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VISTA 3: AUDITORÍA -->
+      <div *ngIf="subTabAdmin === 'auditoria'" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4 fade-in">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-clock-rotate-left text-orange-500"></i> Bitácora de Trazabilidad y Auditoría
+        </h3>
+        <div class="overflow-x-auto max-h-[450px]">
+          <table class="w-full text-left text-xs">
+            <thead class="text-slate-400 border-b border-slate-800 uppercase font-mono text-[10px]">
+              <tr>
+                <th class="py-2.5 px-3">Acción</th>
+                <th class="py-2.5 px-3">Entidad</th>
+                <th class="py-2.5 px-3">Dirección IP</th>
+                <th class="py-2.5 px-3">Fecha y Hora</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50">
+              <tr *ngFor="let a of auditoriaList" class="hover:bg-slate-800/20">
+                <td class="py-2.5 px-3 font-mono font-bold text-orange-400">{{ a.accion }}</td>
+                <td class="py-2.5 px-3 text-slate-300">{{ a.entidad || 'Sistema' }}</td>
+                <td class="py-2.5 px-3 font-mono text-slate-400">{{ a.ip_address }}</td>
+                <td class="py-2.5 px-3 text-slate-500">{{ a.created_at | date:'HH:mm:ss dd/MM/yyyy' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 5: LOGIN & REGISTRO MODAL / PANTALLA                     -->
+    <!-- ============================================================ -->
+    <div *ngIf="tabActiva === 'auth' && !auth.usuario()" class="fade-in max-w-md mx-auto my-8">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
+        
+        <!-- Toggle Modo -->
+        <div class="grid grid-cols-2 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+          <button (click)="modoAuth = 'login'" [class.bg-orange-500]="modoAuth === 'login'" [class.text-white]="modoAuth === 'login'"
+                  class="py-2 rounded-lg text-xs font-semibold text-slate-400 transition">
+            Iniciar Sesión
+          </button>
+          <button (click)="modoAuth = 'register'" [class.bg-orange-500]="modoAuth === 'register'" [class.text-white]="modoAuth === 'register'"
+                  class="py-2 rounded-lg text-xs font-semibold text-slate-400 transition">
+            Crear Cuenta
+          </button>
+        </div>
+
+        <div *ngIf="mensajeAuth" class="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-300">
+          {{ mensajeAuth }}
+        </div>
+
+        <!-- FORM LOGIN -->
+        <div *ngIf="modoAuth === 'login'" class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Correo Electrónico</label>
+            <input type="email" [(ngModel)]="formLogin.email" placeholder="cliente@smartgym.pe"
+                   class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Contraseña</label>
+            <input type="password" [(ngModel)]="formLogin.password" placeholder="••••••••"
+                   class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white">
+          </div>
+          <button (click)="ejecutarLogin()" [disabled]="cargandoAuth"
+                  class="w-full py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm transition shadow-lg shadow-orange-500/20 disabled:opacity-50">
+            <span *ngIf="cargandoAuth"><i class="fa-solid fa-spinner fa-spin"></i> Entrando...</span>
+            <span *ngIf="!cargandoAuth">Ingresar a SmartGym</span>
+          </button>
+
+          <!-- Acceso Rápido para Pruebas / Demo Docente -->
+          <div class="pt-4 border-t border-slate-800">
+            <span class="text-[11px] text-slate-500 font-bold block mb-2 uppercase">Acceso Rápido de Prueba (Demo):</span>
+            <div class="grid grid-cols-3 gap-2">
+              <button (click)="loginRapido('cliente1@smartgym.pe', 'Cliente123!')" class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-slate-300 hover:border-orange-500 transition">
+                Socio (Ana)
+              </button>
+              <button (click)="loginRapido('entrenador1@smartgym.pe', 'Trainer123!')" class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-slate-300 hover:border-orange-500 transition">
+                Entrenador
+              </button>
+              <button (click)="loginRapido('admin@smartgym.pe', 'Admin123!')" class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-slate-300 hover:border-orange-500 transition">
+                Admin
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- FORM REGISTRO -->
+        <div *ngIf="modoAuth === 'register'" class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Nombre</label>
+              <input type="text" [(ngModel)]="formRegister.nombre" placeholder="Juan" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Apellido</label>
+              <input type="text" [(ngModel)]="formRegister.apellido" placeholder="Pérez" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Correo Electrónico</label>
+            <input type="email" [(ngModel)]="formRegister.email" placeholder="usuario@correo.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Contraseña (Mín. 8 caracteres, mayúscula y número)</label>
+            <input type="password" [(ngModel)]="formRegister.password" placeholder="Password123!" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white">
+          </div>
+          <button (click)="ejecutarRegistro()" [disabled]="cargandoAuth"
+                  class="w-full py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm transition shadow-lg shadow-orange-500/20 disabled:opacity-50">
+            <span *ngIf="cargandoAuth"><i class="fa-solid fa-spinner fa-spin"></i> Registrando...</span>
+            <span *ngIf="!cargandoAuth">Crear Cuenta y Comenzar Onboarding</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ============================================================ -->
+  <!-- MODAL 1: EDITAR DATOS PERSONALES DEL SOCIO (CLIENTE)         -->
+  <!-- ============================================================ -->
+  <div *ngIf="modalEditarPerfil" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm fade-in">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-user-pen text-orange-500"></i> Modificar Mis Datos Personales
+        </h3>
+        <button (click)="modalEditarPerfil = false" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Nombres</label>
+            <input type="text" [(ngModel)]="formEditarPerfil.nombre" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Apellidos</label>
+            <input type="text" [(ngModel)]="formEditarPerfil.apellido" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Correo Electrónico</label>
+          <input type="email" [(ngModel)]="formEditarPerfil.email" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Teléfono Móvil</label>
+            <input type="text" [(ngModel)]="formEditarPerfil.telefono" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Dirección / Residencia</label>
+            <input type="text" [(ngModel)]="formEditarPerfil.direccion" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800">
+          <div>
+            <label class="block text-slate-400 mb-1">Contacto de Emergencia</label>
+            <input type="text" [(ngModel)]="formEditarPerfil.contacto_emergencia" placeholder="Nombre completo" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Teléfono de Emergencia</label>
+            <input type="text" [(ngModel)]="formEditarPerfil.telefono_emergencia" placeholder="Número" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 text-[11px] text-orange-200">
+          <i class="fa-solid fa-circle-info mr-1 text-orange-400"></i>
+          <strong>Control Antropométrico:</strong> Tu peso y talla solo pueden ser modificados por tu entrenador asignado durante los controles de seguimiento en el gimnasio.
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <button (click)="modalEditarPerfil = false" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+          Cancelar
+        </button>
+        <button (click)="guardarEdicionPerfil()" class="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold shadow-md shadow-orange-500/20">
+          Guardar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MODAL: CAMBIAR CONTRASEÑA (SEGURIDAD Y PRIVACIDAD DEL SOCIO) -->
+  <!-- ============================================================ -->
+  <div *ngIf="modalCambiarPassword" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm fade-in">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-shield-halved text-orange-500"></i> Cambiar Mi Contraseña
+        </h3>
+        <button (click)="modalCambiarPassword = false" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div *ngIf="mensajePassword" class="p-3 rounded-xl text-xs border"
+           [ngClass]="exitoPassword ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' : 'bg-red-500/10 text-red-300 border-red-500/30'">
+        <i class="fa-solid mr-1" [ngClass]="exitoPassword ? 'fa-circle-check text-emerald-400' : 'fa-circle-exclamation text-red-400'"></i>
+        {{ mensajePassword }}
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-400 mb-1">Contraseña Actual</label>
+          <input type="password" [(ngModel)]="formPassword.passwordActual" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Nueva Contraseña (Mínimo 8 caracteres)</label>
+          <input type="password" [(ngModel)]="formPassword.passwordNueva" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Confirmar Nueva Contraseña</label>
+          <input type="password" [(ngModel)]="formPassword.confirmarPassword" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+        </div>
+
+        <p class="text-[11px] text-slate-500 italic">
+          * Tu contraseña se cifra con algoritmo criptográfico bcrypt (10 rondas de salt) para garantizar máxima privacidad.
+        </p>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <button (click)="modalCambiarPassword = false" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+          Cancelar
+        </button>
+        <button (click)="ejecutarCambioPassword()" [disabled]="cargandoPassword"
+                class="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold shadow-md shadow-orange-500/20 disabled:opacity-50">
+          <span *ngIf="cargandoPassword"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Actualizando...</span>
+          <span *ngIf="!cargandoPassword">Guardar Nueva Clave</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MODAL 2: EDITAR PERSONAL / STAFF (ADMIN)                     -->
+  <!-- ============================================================ -->
+  <div *ngIf="modalEditarStaff" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm fade-in">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-user-gear text-orange-500"></i> Modificar Personal del Sistema
+        </h3>
+        <button (click)="modalEditarStaff = false" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs" *ngIf="staffSeleccionado">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Nombres</label>
+            <input type="text" [(ngModel)]="staffSeleccionado.nombre" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Apellidos</label>
+            <input type="text" [(ngModel)]="staffSeleccionado.apellido" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Correo Electrónico</label>
+          <input type="email" [(ngModel)]="staffSeleccionado.email" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Especialidad / Cargo</label>
+            <input type="text" [(ngModel)]="staffSeleccionado.especialidad" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Teléfono</label>
+            <input type="text" [(ngModel)]="staffSeleccionado.telefono" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Estado de Cuenta</label>
+          <select [(ngModel)]="staffSeleccionado.activo" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+            <option [ngValue]="true">Activo (Habilitado para trabajar)</option>
+            <option [ngValue]="false">Inactivo (Suspendido temporalmente)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <button (click)="modalEditarStaff = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">
+          Cancelar
+        </button>
+        <button (click)="guardarEdicionStaff()" class="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold">
+          Actualizar Personal
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MODAL 3: EDITAR SOCIO / CLIENTE (ADMINISTRATIVO)             -->
+  <!-- ============================================================ -->
+  <div *ngIf="modalEditarCliente" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm fade-in">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-address-card text-orange-500"></i> Modificar Datos de Socio (Administrativo)
+          </h3>
+          <span class="text-xs font-mono text-orange-400">{{ clienteAdminSeleccionado?.numero_socio }}</span>
+        </div>
+        <button (click)="modalEditarCliente = false" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs" *ngIf="clienteAdminSeleccionado">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Nombres</label>
+            <input type="text" [(ngModel)]="clienteAdminSeleccionado.nombre" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Apellidos</label>
+            <input type="text" [(ngModel)]="clienteAdminSeleccionado.apellido" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">DNI</label>
+            <input type="text" [(ngModel)]="clienteAdminSeleccionado.dni" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Teléfono</label>
+            <input type="text" [(ngModel)]="clienteAdminSeleccionado.telefono" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Correo Electrónico</label>
+          <input type="email" [(ngModel)]="clienteAdminSeleccionado.email" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Estado de Cuenta (Login)</label>
+            <select [(ngModel)]="clienteAdminSeleccionado.activo" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+              <option [ngValue]="true">Activo (Acceso Web Habilitado)</option>
+              <option [ngValue]="false">Suspendido (Bloqueo de Cuenta)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Estado de Membresía (Plan)</label>
+            <select [(ngModel)]="clienteAdminSeleccionado.estado_membresia" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+              <option value="ACTIVA">ACTIVA (Plan vigente)</option>
+              <option value="PENDIENTE">PENDIENTE (Sin pago / nuevo)</option>
+              <option value="VENCIDA">VENCIDA (Plan expirado)</option>
+              <option value="CONGELADA">CONGELADA (Permiso temporal)</option>
+            </select>
+          </div>
+        </div>
+
+        <p class="text-[11px] text-slate-400 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+          <i class="fa-solid fa-circle-info text-orange-400 mr-1"></i>
+          <strong>Separación de Dominios:</strong> El <em>Estado de Cuenta</em> controla el acceso a la plataforma de usuarios. El <em>Estado de Membresía</em> es actualizado automáticamente por el microservicio <strong>MS-Membresías</strong> vía API interna.
+        </p>
+
+        <p class="text-[11px] text-slate-500 italic">
+          * Como administrador no puedes alterar registros de pesajes ni notas médicas, garantizando la privacidad del socio.
+        </p>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <button (click)="modalEditarCliente = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">
+          Cancelar
+        </button>
+        <button (click)="guardarEdicionClienteAdmin()" class="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold">
+          Guardar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONEXIÓN & HANDOFF HACIA MS-MEMBRESÍAS -->
+  <div *ngIf="modalMembresiasHandoff && payloadHandoffMembresias" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm fade-in">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      
+      <!-- Header Modal -->
+      <div class="flex justify-between items-center px-6 py-4 border-b border-slate-800 bg-slate-950/60">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center text-white shadow">
+            <i class="fa-solid fa-plug-circle-bolt"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">Conexión con MS-Membresías</h3>
+            <p class="text-[11px] text-slate-400">Transferencia de perfil biométrico y preferencias para recomendación de planes</p>
+          </div>
+        </div>
+        <button (click)="modalMembresiasHandoff = false" class="text-slate-400 hover:text-white text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Body Scrollable -->
+      <div class="p-6 overflow-y-auto space-y-5 text-xs">
+
+        <!-- Aviso Consola F12 -->
+        <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center gap-2.5">
+          <i class="fa-solid fa-terminal text-emerald-400 text-sm"></i>
+          <span>
+            <strong>¡Impreso en Consola!</strong> Abre las DevTools de tu navegador (<strong>F12 → Console</strong>) para ver este JSON y la tabla de endpoints lista para copiar.
+          </span>
+        </div>
+
+        <!-- Redirección Directa al Microservicio del Compañero -->
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+          <label class="block font-bold text-slate-200 uppercase tracking-wider text-[11px]">
+            1. URL del Microservicio de Membresías (Frontend de tu compañero)
+          </label>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input type="url" [(ngModel)]="urlMsMembresias" placeholder="https://xxxx.ngrok-free.dev o http://localhost:4300"
+                   class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono text-xs focus:border-orange-500 focus:outline-none">
+            <button (click)="abrirMicroservicioMembresias()"
+                    class="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2 whitespace-nowrap">
+              <span>Ir a MS-Membresías con Datos</span>
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400">
+            Se abrirá enviando en la URL <code class="text-orange-400">numero_socio</code>, <code class="text-orange-400">usuario_id</code>, <code class="text-orange-400">objetivo</code>, <code class="text-orange-400">disciplinas</code>, <code class="text-orange-400">datos_json</code> (Base64) y <code class="text-emerald-400">return_url</code> para volver manteniendo tu sesión iniciada automáticamente.
+          </p>
+        </div>
+
+        <!-- Endpoints para el Backend del Compañero -->
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="font-bold text-slate-200 uppercase tracking-wider text-[11px]">
+              2. Endpoints de tu Backend (MS-Usuarios) para tu Compañero
+            </span>
+            <button (click)="copiarParaCompanero('endpoints')"
+                    class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-orange-400 font-semibold border border-slate-700 transition flex items-center gap-1.5">
+              <i class="fa-solid" [ngClass]="copiadoEndpoints ? 'fa-check text-emerald-400' : 'fa-copy'"></i>
+              <span>{{ copiadoEndpoints ? '¡Copiado!' : 'Copiar Endpoints' }}</span>
+            </button>
+          </div>
+
+          <div class="space-y-2 font-mono text-[11px]">
+            <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+              <div class="text-emerald-400 font-bold mb-1">GET — Obtener Perfil y Preferencias del Socio:</div>
+              <div class="text-slate-200 break-all">{{ originActual }}/api/v1/interno/usuarios/{{ payloadHandoffMembresias.socio.numero_socio }}/perfil</div>
+            </div>
+            <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+              <div class="text-amber-400 font-bold mb-1">PUT — Activar / Suspender Estado de Membresía:</div>
+              <div class="text-slate-200 break-all">{{ originActual }}/api/v1/interno/clientes/{{ payloadHandoffMembresias.socio.cliente_id }}/membresia</div>
+              <div class="text-slate-400 mt-1">Body: &#123; "estado_membresia": "ACTIVA", "plan_nombre": "Plan Black VIP" &#125;</div>
+            </div>
+            <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+              <div class="text-sky-400 font-bold mb-1">Headers Obligatorios:</div>
+              <div class="text-slate-300">X-API-Key: <span class="text-white">smartgym_api_key_2026_interservice</span></div>
+              <div class="text-slate-300">ngrok-skip-browser-warning: <span class="text-white">true</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Guía de Retorno sin Perder el Logueo -->
+        <div class="p-4 rounded-xl bg-slate-950 border border-emerald-500/30 space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="font-bold text-emerald-400 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+              <i class="fa-solid fa-rotate-left"></i>
+              3. Cómo regresar a SmartGym sin perder el logueo (Para tu compañero)
+            </span>
+            <button (click)="copiarParaCompanero('retorno')"
+                    class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold border border-slate-700 transition flex items-center gap-1.5">
+              <i class="fa-solid" [ngClass]="copiadoRetorno ? 'fa-check text-emerald-400' : 'fa-copy'"></i>
+              <span>{{ copiadoRetorno ? '¡Código Copiado!' : 'Copiar Código' }}</span>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-300 leading-relaxed">
+            Para que el socio <strong>no pierda su sesión</strong> al volver de MS-Membresías, tu compañero debe leer el parámetro <code class="text-emerald-400">return_url</code> que recibió en la URL (actualmente <code class="text-white">{{ originActual }}</code>) y usarlo en su botón de regreso (o cerrar la pestaña con <code class="text-slate-200">window.close()</code>). Al regresar al mismo dominio, el navegador conserva el JWT en <code class="text-slate-200">localStorage</code> y actualiza el estado automáticamente.
+          </p>
+          <pre class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-emerald-300/90 font-mono text-[11px] overflow-x-auto leading-relaxed">{{ codigoRetornoEjemplo }}</pre>
+        </div>
+
+        <!-- Payload JSON Completo -->
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="font-bold text-slate-200 uppercase tracking-wider text-[11px]">
+              4. Datos del Cliente Listos para Enviar (JSON Payload)
+            </span>
+            <button (click)="copiarParaCompanero('payload')"
+                    class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-orange-400 font-semibold border border-slate-700 transition flex items-center gap-1.5">
+              <i class="fa-solid" [ngClass]="copiadoPayload ? 'fa-check text-emerald-400' : 'fa-copy'"></i>
+              <span>{{ copiadoPayload ? '¡JSON Copiado!' : 'Copiar JSON' }}</span>
+            </button>
+          </div>
+          <pre class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 font-mono text-[11px] overflow-x-auto max-h-60 leading-relaxed">{{ payloadJsonFormateado }}</pre>
+        </div>
+
+      </div>
+
+      <!-- Footer Modal -->
+      <div class="flex justify-end px-6 py-3.5 border-t border-slate-800 bg-slate-950/60">
+        <button (click)="modalMembresiasHandoff = false" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-800/80 bg-slate-900/50 py-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+      <span>SmartGym © 2026 — Proyecto Microservicios (Taller de Desarrollo - UNU)</span>
+      <span class="font-mono text-slate-400">Desarrollado por: Wiley Fabian Guerra Rios</span>
+    </div>
+  </footer>
+
+</div>
